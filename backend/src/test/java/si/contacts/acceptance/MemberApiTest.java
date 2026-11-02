@@ -6,6 +6,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import si.contacts.support.Api;
 import si.contacts.support.ApiTestBase;
+import si.contacts.support.AuthEmulator;
 import si.contacts.support.Tokens;
 import tools.jackson.databind.JsonNode;
 
@@ -44,13 +45,13 @@ class MemberApiTest extends ApiTestBase {
     assertThat(r.json().get("status").asText()).isEqualTo("INVITED");
     assertThat(api.get(owner.token(), members(w)).json().get("invitations").get(0).get("email").asText()).isEqualTo(email);
 
-    String uid = Tokens.randomUid();
-    String unverified = Tokens.emulator(uid, email.toUpperCase(), false, "Nova");
-    assertThat(api.get(unverified, "/api/workspaces/" + w).status()).isEqualTo(404);
-    TestUser impostor = new TestUser(Tokens.randomUid(), "drug@example.si", Tokens.emulator(Tokens.randomUid(), "drug@example.si", true, "Drug"));
+    AuthEmulator.Account account = AuthEmulator.signUp(email, "Nova", false);
+    assertThat(api.get(account.token(), "/api/workspaces/" + w).status()).isEqualTo(404);
+    TestUser impostor = user("Drug");
     assertThat(api.get(impostor.token(), "/api/workspaces/" + w).status()).isEqualTo(404);
 
-    String verified = Tokens.emulator(uid, email.toUpperCase(), true, "Nova");
+    AuthEmulator.update(account.uid(), null, null, true);
+    String verified = AuthEmulator.signIn(email).token();
     Api.Res now = api.get(verified, "/api/workspaces/" + w);
     assertThat(now.status()).isEqualTo(200);
     assertThat(now.json().get("role").asText()).isEqualTo("VIEWER");
@@ -148,7 +149,7 @@ class MemberApiTest extends ApiTestBase {
     String email = "preklic." + Tokens.randomUid().substring(0, 6) + "@example.si";
     String inv = api.post(owner.token(), members(w), Map.of("email", email, "role", "EDITOR")).json().get("invitation").get("id").asText();
     assertThat(api.delete(owner.token(), "/api/workspaces/" + w + "/invitations/" + inv).status()).isEqualTo(204);
-    String token = Tokens.emulator(Tokens.randomUid(), email, true, "P");
+    String token = AuthEmulator.signUp(email, "P", true).token();
     assertThat(api.get(token, "/api/workspaces/" + w).status()).isEqualTo(404);
     assertThat(api.get(owner.token(), members(w)).json().get("invitations").size()).isZero();
   }

@@ -36,11 +36,11 @@ public abstract class ApiTestBase {
     api = new Api(port);
   }
 
-  /** A signed-in, verified User with a fresh identity. */
+  /** A signed-in, verified User with a fresh identity and a real token from the Auth emulator. */
   protected TestUser user(String name) {
-    String uid = Tokens.randomUid();
-    String email = name.toLowerCase().replaceAll("[^a-z0-9]", "") + "." + uid.substring(0, 8) + "@example.si";
-    TestUser u = new TestUser(uid, email, Tokens.emulator(uid, email, true, name));
+    String email = name.toLowerCase().replaceAll("[^a-z0-9]", "") + "." + Tokens.randomUid().substring(0, 10).toLowerCase() + "@example.si";
+    AuthEmulator.Account a = AuthEmulator.signUp(email, name, true);
+    TestUser u = new TestUser(a.uid(), email, a.token());
     api.get(u.token(), "/api/me");
     return u;
   }

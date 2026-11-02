@@ -6,6 +6,7 @@ import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import si.contacts.support.Api;
 import si.contacts.support.ApiTestBase;
+import si.contacts.support.AuthEmulator;
 import si.contacts.support.Tokens;
 
 /** US-001: sign-in identity and the User record. */
@@ -29,24 +30,26 @@ class SignInApiTest extends ApiTestBase {
 
   @Test
   void AC_001_02_meCreatesTheUserOnce() {
-    String uid = Tokens.randomUid();
-    String token = Tokens.emulator(uid, "Mojca@Example.si", false, "Mojca Kranjc");
+    String email = "mojca." + Tokens.randomUid().substring(0, 8).toLowerCase() + "@example.si";
+    String token = AuthEmulator.signUp(email, "Mojca Kranjc", false).token();
     Api.Res first = api.get(token, "/api/me");
     Api.Res second = api.get(token, "/api/me");
     assertThat(first.status()).isEqualTo(200);
     assertThat(second.json().get("id").asText()).isEqualTo(first.json().get("id").asText());
-    assertThat(first.json().get("email").asText()).isEqualTo("Mojca@Example.si");
+    assertThat(first.json().get("email").asText()).isEqualTo(email);
     assertThat(first.json().get("emailVerified").asBoolean()).isFalse();
     assertThat(first.json().get("displayName").asText()).isEqualTo("Mojca Kranjc");
   }
 
   @Test
   void AC_001_03_meKeepsEmailVerifiedFlagAndDisplayNameCurrent() {
-    String uid = Tokens.randomUid();
-    String id = api.get(Tokens.emulator(uid, "old@example.si", false, "Old"), "/api/me").json().get("id").asText();
-    Api.Res r = api.get(Tokens.emulator(uid, "new@example.si", true, "Žiga Čeh"), "/api/me");
+    String suffix = Tokens.randomUid().substring(0, 8).toLowerCase();
+    AuthEmulator.Account old = AuthEmulator.signUp("old." + suffix + "@example.si", "Old", false);
+    String id = api.get(old.token(), "/api/me").json().get("id").asText();
+    AuthEmulator.update(old.uid(), "new." + suffix + "@example.si", "Žiga Čeh", true);
+    Api.Res r = api.get(AuthEmulator.signIn("new." + suffix + "@example.si").token(), "/api/me");
     assertThat(r.json().get("id").asText()).isEqualTo(id);
-    assertThat(r.json().get("email").asText()).isEqualTo("new@example.si");
+    assertThat(r.json().get("email").asText()).isEqualTo("new." + suffix + "@example.si");
     assertThat(r.json().get("emailVerified").asBoolean()).isTrue();
     assertThat(r.json().get("displayName").asText()).isEqualTo("Žiga Čeh");
   }

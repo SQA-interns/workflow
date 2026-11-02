@@ -6,7 +6,8 @@ import java.util.Base64;
 import java.util.UUID;
 
 /**
- * Builds ID tokens in exactly the shape the Firebase Auth Emulator issues: unsigned ({@code
+ * Builds tokens the emulator cannot issue (expired, another project, unsigned in production mode),
+ * in exactly the shape the Firebase Auth Emulator issues: unsigned ({@code
  * alg: none}), audience = project id, issuer = securetoken.google.com/project.
  */
 public final class Tokens {
