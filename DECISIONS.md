@@ -1,0 +1,20 @@
+# Decisions of the contacts feature experiment
+
+> Separate repository · Never copied into a run folder
+
+One row per decision, newest last. "Status" is `agreed` (every side uses it) or `proposed` (waiting for review).
+
+## Experiment design
+
+| # | Date | Decision | Status |
+|---|---|---|---|
+| D-01 | 2026-11-02 | Same project for every run: multi-tenant contact management, template 1.9-ft, repository SQA-interns/workflow, branch `main`. Run folders are cloned with `--single-branch -b main`. | agreed |
+| D-02 | 2026-11-02 | The experiment (features, oracle, instructions) is a **separate repository** (local folder `contacts-feature-testing-experiment`, proposed remote SQA-interns/workflow-experiment), not an orphan branch of the template: a run folder can then never contain it, whatever is cloned. The registration project's experiment (`feature-testing-experiment`, SQA-interns/feature-testing) is untouched. | agreed |
+| D-03 | 2026-11-02 | Two features, chosen from what the base project leaves out on purpose and checkable through the API: `import` (Excel import in the Export's layout, all or nothing) and `activity` (Workspace activity feed of all Revisions). Rejected: `fuzzy` (similarity duplicates), hard to specify exactly enough for an oracle. | agreed |
+| D-04 | 2026-11-02 | Run types as in the registration experiment: normal (no feature, baseline), greenfield (feature in the inputs from the start), brownfield (feature as a prepared change request on a finished run, in a new session from the base run's final commit). | agreed |
+| D-05 | 2026-11-02 | Branches `<user>/single-agent/sdd/contacts/run-<n>[-<features>]`, labels `<user>_single-agent_sdd_contacts_run-<n>[-<features>]`; operators kyuhi, tanej, tjan. | agreed |
+| D-06 | 2026-11-02 | **Fixed ids per feature in every run type** (import: US-014, AC-014, BR-20–22, SR-12, E2E-08, DoD-P07; activity: US-015, AC-015, BR-23–24, SR-13, E2E-09, DoD-P08), so the greenfield package and the change request are word for word the same text and features can be chained in any order. Trade-off against the registration experiment's E-07: a greenfield `activity` run sees a gap after US-013 (no US-014); accepted, because identical text in both run types matters more for the comparison than a gap-free numbering. The template's lint warns about skipped ids and accepts them. | proposed |
+| D-07 | 2026-11-02 | A change request only **adds** requirements and never MODIFIES a base item (`Baseline items changed: none`). Where a feature lifts an exclusion of the base (import: OQ-06 "export only"; activity: US-009 "a Workspace-wide activity feed"), the change request's Intent says so in words; the greenfield package replaces those lines, because there the inputs must not contradict themselves. | proposed |
+| D-08 | 2026-11-02 | The oracle needs Users without real Google accounts: the template's contract fixes the Auth emulator at `127.0.0.1:9099`, a `demo-` project id, and a compose file that starts the emulator by default (`api-contract.md`, "Local stack"). The oracle creates and verifies its Users through the emulator's REST API and forges expired and wrong-audience tokens from emulator tokens (the emulator does not sign them). | agreed |
+| D-09 | 2026-11-02 | Oracle (`oracle/`): regression R01–R31 in the main phase plus R32 (rate limit, `RATE_LIMIT_PER_MINUTE=3`, per User and endpoint) in its own phase; `import` I01–I13; `activity` A01–A14. API only; UI-only criteria (pages, Slovenian texts, accessibility) are left to the run's own frozen tests and phase 6. Isolation is checked strictly: a non-Member's 404 must have the same body as the 404 for a Workspace that does not exist (SR-03). Results stay outside the run folder; `summarize.py` writes the same format as the registration oracle, so the 1.9-ft report reads it unchanged. | agreed |
+| D-10 | 2026-11-02 | `features/build-inputs.py` reads the base project from a clone of the template repository (`--template`, default ref `main`), because the template is no longer a branch of this repository. | agreed |
