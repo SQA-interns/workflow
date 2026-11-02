@@ -46,6 +46,7 @@ export function App({ api, auth }: Props) {
                     <Route path="kontakti/nov" element={<ContactFormPage />} />
                     <Route path="kontakti/:cid" element={<ContactPage />} />
                     <Route path="kontakti/:cid/uredi" element={<ContactFormPage />} />
+                    <Route path="izbrisani" element={<ContactListPage key="deleted" deleted />} />
                     <Route path="oznake" element={<TagsPage />} />
                     <Route path="clani" element={<MembersPage />} />
                     <Route path="nastavitve" element={<WorkspaceSettingsPage />} />
