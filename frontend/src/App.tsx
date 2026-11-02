@@ -10,6 +10,9 @@ import { WorkspaceLayout } from './pages/WorkspaceLayout';
 import { WorkspaceSettingsPage } from './pages/WorkspaceSettingsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { MembersPage } from './pages/MembersPage';
+import { ContactListPage } from './pages/ContactListPage';
+import { ContactFormPage } from './pages/ContactFormPage';
+import { ContactPage } from './pages/ContactPage';
 
 interface Props {
   api: Api;
@@ -38,6 +41,10 @@ export function App({ api, auth }: Props) {
                 <Routes>
                   <Route path="/" element={<WorkspaceListPage />} />
                   <Route path="/w/:wid" element={<WorkspaceLayout />}>
+                    <Route index element={<ContactListPage />} />
+                    <Route path="kontakti/nov" element={<ContactFormPage />} />
+                    <Route path="kontakti/:cid" element={<ContactPage />} />
+                    <Route path="kontakti/:cid/uredi" element={<ContactFormPage />} />
                     <Route path="clani" element={<MembersPage />} />
                     <Route path="nastavitve" element={<WorkspaceSettingsPage />} />
                   </Route>

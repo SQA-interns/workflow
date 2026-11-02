@@ -78,3 +78,4 @@ dialog { border: 1px solid var(--line); border-radius: 8px; max-width: 900px; wi
 .pager { display: flex; gap: 0.7rem; align-items: center; margin-top: 0.8rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 760px) { .workspace { grid-template-columns: 1fr; } }
+.muted { color: var(--muted); }
