@@ -133,7 +133,7 @@ Normalisation: email lower case; phone `00`→`+`, then digits only, at least 6 
 - `{ "contactIds": ["uuid", ...] }`: those Contacts, in list default order (last name, first name); a Deleted, foreign or unknown id → 400 `contactIds`;
 - `{ "filter": { q, tag, tagMode, attr, country, company, sort, dir } }`: every active Contact matching, in the filter's order.
 
-Both or neither → 400. More than 10,000 Contacts → 400. Response 200 `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition: attachment; filename="<workspace-name>-<yyyy-MM-dd>.xlsx"` (name reduced to letters, digits, `-` and `_`).
+Both or neither → 400. More than 10,000 Contacts → 400. Response 200 `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition: attachment; filename="<ascii-name>-<yyyy-MM-dd>.xlsx"; filename*=UTF-8''<name>-<yyyy-MM-dd>.xlsx` (spaces become `-`; the name keeps only letters, digits, `-` and `_`; the plain form drops diacritics; the date is in Europe/Ljubljana).
 
 Columns, in order: `Ime`, `Priimek`, `E-pošta`, `Telefon`, `Podjetje`, `Delovno mesto`, `Ulica`, `Poštna številka`, `Kraj`, `Država`, `Opomba`, `Oznake` (Tags joined by `, `), then one column per Attribute key (lower case, sorted). Every cell is a text cell; values are never formulas.
 

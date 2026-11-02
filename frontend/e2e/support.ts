@@ -99,3 +99,9 @@ export async function expectAccessible(page: Page): Promise<void> {
 export async function goTo(page: Page, item: string): Promise<void> {
   await page.getByRole('navigation', { name: 'Delovni prostor' }).getByRole('link', { name: item, exact: true }).click();
 }
+
+/** All XML text of a downloaded .xlsx (sheet and strings), for checking which values it holds. */
+export async function workbookText(path: string): Promise<string> {
+  const { execFileSync } = await import('node:child_process');
+  return execFileSync('unzip', ['-p', path], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+}

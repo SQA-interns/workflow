@@ -209,6 +209,20 @@ export function queryString(q: ContactQuery): string {
   return s ? `?${s}` : '';
 }
 
+/** The download name from Content-Disposition, preferring the UTF-8 form. */
+export function filenameOf(disposition: string): string {
+  const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+  if (utf8) {
+    try {
+      return decodeURIComponent(utf8[1]);
+    } catch {
+      // fall back to the plain name
+    }
+  }
+  const plain = /filename="([^"]+)"/.exec(disposition);
+  return plain ? plain[1] : 'kontakti.xlsx';
+}
+
 export function httpApi(getToken: () => Promise<string | null>, base = ''): Api {
   async function call(method: string, path: string, body?: unknown): Promise<Response> {
     const token = await getToken();
@@ -274,9 +288,7 @@ export function httpApi(getToken: () => Promise<string | null>, base = ''): Api 
     merge: (wid, request) => json('POST', `${w(wid)}/merge`, request),
     exportContacts: async (wid, request) => {
       const res = await call('POST', `${w(wid)}/export`, request);
-      const disposition = res.headers.get('Content-Disposition') ?? '';
-      const match = /filename="([^"]+)"/.exec(disposition);
-      return { blob: await res.blob(), filename: match ? match[1] : 'kontakti.xlsx' };
+      return { blob: await res.blob(), filename: filenameOf(res.headers.get('Content-Disposition') ?? '') };
     },
   };
 }
