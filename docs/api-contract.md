@@ -107,7 +107,7 @@ Revision: `{ number, type, author: { id, email, displayName }, createdAt, state:
 
 ## Duplicate sets
 
-`GET /api/workspaces/{wid}/duplicate-sets` (Member) → 200 `[{ contacts: [Contact], matches: [{ contactIds: [a, b], kind: "EMAIL" | "PHONE" | "NAME", value }] }]`.
+`GET /api/workspaces/{wid}/duplicate-sets` (Member) → 200 `[{ contacts: [Contact], matches: [{ contactIds, kind: "EMAIL" | "PHONE" | "NAME", value }] }]`; each match lists every Contact of the set sharing that normalised value.
 
 Normalisation: email lower case; phone `00`→`+`, then digits only, at least 6 digits; full name = first + last name, lower case, diacritics removed, whitespace collapsed (both names needed). Active Contacts only, grouped transitively.
 

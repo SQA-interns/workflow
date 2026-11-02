@@ -25,14 +25,18 @@ public final class Normalize {
     return email == null ? null : email.strip().toLowerCase(Locale.ROOT);
   }
 
-  /** {@code 00} becomes {@code +}, then digits only; fewer than 6 digits never match (null). */
+  /** Formatting removed, {@code 00} becomes {@code +}, digits only; fewer than 6 digits never match (null). */
   public static String phone(String phone) {
     if (phone == null) return null;
-    String p = phone.strip();
-    if (p.startsWith("00")) p = "+" + p.substring(2);
-    String digits = p.replaceAll("[^0-9]", "");
+    String s = phone.replaceAll("[^0-9+]", "");
+    boolean plus = s.startsWith("+");
+    String digits = s.replaceAll("[^0-9]", "");
+    if (!plus && digits.startsWith("00")) {
+      plus = true;
+      digits = digits.substring(2);
+    }
     if (digits.length() < 6) return null;
-    return (p.startsWith("+") ? "+" : "") + digits;
+    return (plus ? "+" : "") + digits;
   }
 
   /** First and last name together; needs both, otherwise null (a first name alone never matches). */
