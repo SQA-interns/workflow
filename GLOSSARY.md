@@ -1,104 +1,86 @@
 # Contact Management
 
-A deliberately simple CRM for one organization: it stores Contacts, labels them with Tags and custom Attributes, keeps a full history of every change, and exports them to Excel.
+A deliberately simple, multi-tenant contact manager: people keep the Contacts of one project or company in a Workspace, label them with Tags and Attributes, see every change as a Revision, find Duplicate sets, Merge them and Export to Excel.
 
-## People
-
-**Contact**:
-A person the organization keeps data about. Has predefined fields (first name, last name, one email, one phone, one address, country, company) plus any number of Attributes and Tags.
-_Avoid_: User (for records), person, customer, entry, record
+## People and access
 
 **User**:
-Someone who signs in to the system and works with Contacts.
-_Avoid_: Contact, account, member
+Someone who signs in (Firebase Authentication) and is known to the application by their sign-in identity.
+_Avoid_: account, member (for the person in general)
 
-**Company**:
-A plain text field on a Contact naming where they work; not a thing in its own right.
-_Avoid_: Organization, account
+**Workspace**:
+The container for the Contacts of one project or company. Only its Members see it; nothing in it is visible from another Workspace.
+_Avoid_: group, project, tenant, organization
 
-## Access
+**Member**:
+A User who belongs to a Workspace with exactly one Role there.
+_Avoid_: participant, collaborator
 
 **Role**:
-What a User may do. Every User has exactly one Role, and it applies to all Contacts:
-- **Viewer** browses, searches and Exports.
-- **Editor** also creates, edits, Tags, Archives, Restores and Merges.
-- **Admin** also manages Users, Tags and Attribute Keys, and Erases Contacts.
-_Avoid_: Permission level, group
+What a Member may do in one Workspace:
+- **Viewer** reads, searches and Exports.
+- **Editor** also creates, changes, deletes, Restores and Merges Contacts and renames or deletes Tags.
+- **Owner** also manages Members and invitations, renames and deletes the Workspace and purges Deleted contacts.
+
+A Workspace always has at least one Owner.
+_Avoid_: permission level, admin
 
 **Invitation**:
-An Admin adding someone's email so they can sign in. Only invited emails get access.
-_Avoid_: Registration, sign-up
+A pending Membership for an email that has no User yet. It becomes a Membership at the first request of a User with that verified email.
+_Avoid_: registration, sign-up
 
-**Deactivation**:
-Removing a User's access. The User is never deleted, and their name stays on every Version they made.
-_Avoid_: Delete user, remove user
+## Contacts
 
-## Labelling
+**Contact**:
+A person the Workspace keeps data about: Predefined fields, Attributes and Tags.
+_Avoid_: record, entry, customer
 
-**Tag**:
-A short label without a value (e.g. `doNotNotify`, `participant2025`) that puts a Contact in a category. Tags come from one shared list, a Contact can have any number, and no Tag has meaning built into the system.
-_Avoid_: Label, category, group
+**Predefined field**:
+One of the fixed fields of a Contact: first name, last name, email, phone, company, job title, street, postal code, city, country, note.
+_Avoid_: column, property
 
 **Attribute**:
-A custom key–value pair on a Contact (e.g. `competence=webProgramming`). The value is always text.
-_Avoid_: Custom field, property
+A free key–value pair on a Contact (e.g. `kompetenca=spletnoProgramiranje`). The value is always text; keys are unique on a Contact ignoring letter case.
+_Avoid_: custom field, property
 
-**Attribute Key**:
-An entry in the shared catalog of keys that Attributes use; it is added the first time someone uses it.
-_Avoid_: Field name
+**Tag**:
+A free word that puts Contacts in a category (e.g. `neObvescaj`). Created on first use, the same Tag regardless of letter case.
+_Avoid_: label, category, group
 
 ## History
 
-**Version**:
-A snapshot of a Contact at one point in time, including its Tags and Attributes. Every change to a Contact creates a new Version, including Archive, Unarchive, Merge, Unmerge and Restore.
-_Avoid_: Revision, snapshot
+**Revision**:
+An immutable snapshot of a Contact's full state written by every change, with its number, change type, author and time. The Contact's version is the number of its latest Revision.
+_Avoid_: version (in prose), snapshot, log entry
 
-**Audit Trail**:
-The ordered list of a Contact's Versions, showing who changed what and when.
-_Avoid_: Log, change log
+**Deleted contact**:
+A Contact that was deleted: hidden from the list, kept with its Revisions, restorable.
+_Avoid_: archived, removed
 
 **Restore**:
-Making an earlier Version of a Contact's data current again. It creates a new Version, does not rewrite history, and never changes whether the Contact is Archived.
-_Avoid_: Rollback, revert, undo
+Making an earlier Revision, or a Deleted contact, current again. It writes a new Revision and never rewrites history.
+_Avoid_: rollback, revert, undo
 
-## Lifecycle
-
-**Archive**:
-Hiding a Contact from lists and search while keeping it and its Audit Trail. Can be reversed.
-_Avoid_: Delete, remove, deactivate
-
-**Erase**:
-Permanently removing a Contact together with its entire Audit Trail and every Merged Contact pointing to it, e.g. for a GDPR request. Cannot be undone.
-_Avoid_: Delete, purge, hard delete
+**Purge**:
+The Owner's permanent erasure of a Deleted contact together with all its Revisions.
+_Avoid_: hard delete, erase
 
 ## Duplicates
 
-**Duplicate Candidate**:
-A pair of Contacts the system suspects are the same person (same email, same phone, or a very similar name plus the same Company or email domain). Only a suggestion; it is never acted on automatically.
-_Avoid_: Duplicate, match
-
-**Dismissal**:
-A User's decision that a Duplicate Candidate is not a duplicate. The pair is not suggested again unless either Contact's name, email or phone changes.
-_Avoid_: Ignore, reject
+**Duplicate set**:
+Active Contacts of one Workspace that match by normalised email, phone or full name, grouped transitively.
+_Avoid_: duplicate candidate, match group
 
 **Merge**:
-Combining one Contact into another. The surviving Contact keeps the values the User picks, all Tags from both, and all Attributes from both (the User picks a value where the same Attribute Key conflicts).
-_Avoid_: Combine, dedupe, join
+Combining 2–10 Contacts of a Duplicate set into one Survivor; the others become Deleted contacts pointing to it.
+_Avoid_: combine, dedupe, join
 
-**Merged Contact**:
-The Contact that did not survive a Merge. It is hidden, read-only, points to the survivor, and keeps its Audit Trail.
-_Avoid_: Deleted duplicate, loser
-
-**Unmerge**:
-Turning a Merged Contact back into a normal Contact, exactly as it was just before the Merge. The survivor is not changed.
-_Avoid_: Split, undo merge
+**Survivor**:
+The Contact that remains after a Merge.
+_Avoid_: master, winner
 
 ## Output
 
 **Export**:
-An Excel file of the Contacts in the current filtered list, or only the selected ones if a selection exists.
-_Avoid_: Download, report
-
-**Export Log**:
-The record of every Export: who, when, how many Contacts and with which filter. Visible to Admins.
-_Avoid_: Download history
+An `.xlsx` workbook of the selected Contacts or of all Contacts matching the current search and filters.
+_Avoid_: download, report

@@ -1,0 +1,69 @@
+# One command starts the whole stack: `docker compose up --build`.
+# Frontend http://localhost:8080, backend http://localhost:8081, Auth emulator http://localhost:9099.
+name: contacts
+
+services:
+  db:
+    image: postgres:16.15-alpine
+    environment:
+      POSTGRES_DB: contacts
+      POSTGRES_USER: contacts
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-contacts}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contacts -d contacts"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  auth:
+    build: ./auth-emulator
+    environment:
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-demo-contacts}
+    ports:
+      - "9099:9099"
+    volumes:
+      - auth-data:/data
+    stop_grace_period: 20s
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/contacts
+      DB_USER: contacts
+      DB_PASSWORD: ${DB_PASSWORD:-contacts}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-demo-contacts}
+      FIREBASE_AUTH_EMULATOR: ${FIREBASE_AUTH_EMULATOR:-true}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-300}
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    environment:
+      SERVER_NAME: ${SERVER_NAME:-localhost}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-demo-contacts}
+      FIREBASE_API_KEY: ${FIREBASE_API_KEY:-demo-api-key}
+      FIREBASE_AUTH_DOMAIN: ${FIREBASE_AUTH_DOMAIN:-localhost}
+      FIREBASE_AUTH_EMULATOR_URL: ${FIREBASE_AUTH_EMULATOR_URL-http://localhost:9099}
+      CSP_CONNECT_SRC: ${CSP_CONNECT_SRC-http://localhost:9099}
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  auth-data:

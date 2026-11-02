@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: contacts
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/contacts}
+    username: ${DB_USER:contacts}
+    password: ${DB_PASSWORD:contacts}
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: always
+  mvc:
+    problemdetails:
+      enabled: false
+  threads:
+    virtual:
+      enabled: true
+server:
+  port: ${PORT:8081}
+  error:
+    whitelabel:
+      enabled: false
+  tomcat:
+    max-swallow-size: 2MB
+    max-http-form-post-size: 1MB
+  forward-headers-strategy: framework
+app:
+  auth:
+    project-id: ${FIREBASE_PROJECT_ID:demo-contacts}
+    emulator: ${FIREBASE_AUTH_EMULATOR:true}
+    jwks-uri: ${FIREBASE_JWKS_URI:https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com}
+  rate-limit:
+    requests-per-minute: ${RATE_LIMIT_PER_MINUTE:300}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  max-body-bytes: 1048576
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
