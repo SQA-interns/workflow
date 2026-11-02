@@ -154,7 +154,7 @@ export interface ExportRequest {
   filter?: Omit<ContactQuery, 'page' | 'size' | 'deleted'>;
 }
 
-export interface Download {
+export interface ExportFile {
   blob: Blob;
   filename: string;
 }
@@ -189,7 +189,7 @@ export interface Api {
 
   listDuplicateSets(wid: string): Promise<DuplicateSet[]>;
   merge(wid: string, request: MergeRequest): Promise<Contact>;
-  exportContacts(wid: string, request: ExportRequest): Promise<Download>;
+  exportContacts(wid: string, request: ExportRequest): Promise<ExportFile>;
 }
 
 export function queryString(q: ContactQuery): string {
@@ -209,7 +209,7 @@ export function queryString(q: ContactQuery): string {
   return s ? `?${s}` : '';
 }
 
-/** The download name from Content-Disposition, preferring the UTF-8 form. */
+/** The Export file name from Content-Disposition, preferring the UTF-8 form. */
 export function filenameOf(disposition: string): string {
   const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
   if (utf8) {

@@ -126,6 +126,9 @@ class ContactApiTest extends ApiTestBase {
     String id = createContact(owner, w, contact("firstName", "X")).get("id").asText();
     api.put(owner.token(), contacts + "/" + id, contact("version", 1, "firstName", "Y"));
     assertThat(api.delete(owner.token(), contacts + "/" + id + "?version=1").status()).isEqualTo(409);
+    Api.Res bad = api.delete(owner.token(), contacts + "/" + id + "?version=abc");
+    assertThat(bad.status()).isEqualTo(400);
+    assertThat(errorFields(bad)).containsExactly("version");
   }
 
   @Test

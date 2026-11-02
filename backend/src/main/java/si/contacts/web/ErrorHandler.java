@@ -29,7 +29,15 @@ public class ErrorHandler {
     return of(HttpStatus.BAD_REQUEST, null, "malformed request body");
   }
 
-  @ExceptionHandler({MethodArgumentTypeMismatchException.class, NoResourceFoundException.class})
+  /** A malformed path id is "not found"; a malformed query parameter is a validation error. */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  ResponseEntity<ErrorBody> typeMismatch(MethodArgumentTypeMismatchException e) {
+    if (e.getParameter().hasParameterAnnotation(org.springframework.web.bind.annotation.RequestParam.class))
+      return of(HttpStatus.BAD_REQUEST, e.getName(), "invalid value");
+    return of(HttpStatus.NOT_FOUND, null, "not found");
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
   ResponseEntity<ErrorBody> notFound() {
     return of(HttpStatus.NOT_FOUND, null, "not found");
   }

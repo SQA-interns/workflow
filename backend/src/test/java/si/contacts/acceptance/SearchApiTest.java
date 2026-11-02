@@ -121,6 +121,8 @@ class SearchApiTest extends ApiTestBase {
     assertThat(errorFields(big)).containsExactly("size");
     assertThat(api.get(owner.token(), contacts + "?size=100").status()).isEqualTo(200);
     assertThat(api.get(owner.token(), contacts + "?page=-1").status()).isEqualTo(400);
+    assertThat(api.get(owner.token(), contacts + "?page=999999999").status()).isEqualTo(400);
+    assertThat(api.get(owner.token(), contacts + "?page=abc").status()).isEqualTo(400);
   }
 
   @Test

@@ -71,7 +71,7 @@ public class MergeController {
 
     List<Contact> ordered = refs.stream().map(r -> byId.get(r.id())).toList();
     Contact survivor = byId.get(survivorId);
-    ContactState merged = combine(survivor, ordered, fieldSources, attributeSources, byId);
+    ContactState merged = mergedState(survivor, ordered, fieldSources, attributeSources, byId);
 
     Contact result = service.write(s, survivor, survivor.version(), merged, "MERGE");
     for (Contact c : ordered) {
@@ -81,7 +81,7 @@ public class MergeController {
     return result.toJson();
   }
 
-  static ContactState combine(
+  static ContactState mergedState(
       Contact survivor,
       List<Contact> ordered,
       Map<String, UUID> fieldSources,
@@ -119,11 +119,11 @@ public class MergeController {
               .orElseThrow(() -> ApiException.badRequest("attributeSources." + e.getKey(), "source has no such attribute"));
       attrs.put(lower, new Attribute(existing.key(), fromSource.value()));
     }
-    if (attrs.size() > 100) throw ApiException.badRequest("attributes", "too many attributes");
+    if (attrs.size() > si.contacts.contact.ContactValidator.MAX_ATTRIBUTES) throw ApiException.badRequest("attributes", "too many attributes");
 
     Map<String, String> tags = new LinkedHashMap<>();
     for (Contact c : survivorFirst) for (String t : c.state().tags()) tags.putIfAbsent(t.toLowerCase(Locale.ROOT), t);
-    if (tags.size() > 50) throw ApiException.badRequest("tags", "too many tags");
+    if (tags.size() > si.contacts.contact.ContactValidator.MAX_TAGS) throw ApiException.badRequest("tags", "too many tags");
 
     return new ContactState(fields, new ArrayList<>(attrs.values()), new ArrayList<>(tags.values()), false, null);
   }

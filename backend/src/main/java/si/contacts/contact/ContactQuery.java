@@ -32,7 +32,7 @@ public record ContactQuery(
     if (!mode.equals("all") && !mode.equals("any")) throw ApiException.badRequest("tagMode", "invalid tag mode");
     int page = integer(p.get("page"), 0, "page");
     int size = integer(p.get("size"), 20, "size");
-    if (page < 0) throw ApiException.badRequest("page", "between 0 and 100000");
+    if (page < 0 || page > 100_000) throw ApiException.badRequest("page", "between 0 and 100000");
     if (size < 1 || size > MAX_SIZE) throw ApiException.badRequest("size", "between 1 and " + MAX_SIZE);
     return new ContactQuery(
         Text.clean(p.get("q")),
