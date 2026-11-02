@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createContact, createWorkspace, expectAccessible, goTo, signUp, uniqueEmail } from './support';
+import { createContact, createWorkspace, expectAccessible, goTo, signUp, tabTo, uniqueEmail } from './support';
 
 // E2E-01: a new User creates a Workspace and its first Contact with Attributes and Tags.
 test('E2E-01 first Contact in a new Workspace', async ({ page }) => {
@@ -32,4 +32,20 @@ test('E2E-01 first Contact in a new Workspace', async ({ page }) => {
   await expect(page.getByRole('row', { name: /udelezenec2025\s+1/ })).toBeVisible();
   await expect(page.getByRole('row', { name: /neObvescaj\s+1/ })).toBeVisible();
   await expectAccessible(page);
+
+  // NFR-06: the main flow works with the keyboard alone.
+  await goTo(page, 'Kontakti');
+  await page.locator('body').focus();
+  await tabTo(page, 'Nov kontakt');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Nov kontakt' })).toBeVisible();
+  await tabTo(page, 'Ime');
+  await page.keyboard.type('Tipko');
+  await page.keyboard.press('Tab');
+  await page.keyboard.type('Brez Miške');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Tipko Brez Miške' })).toBeVisible();
+  await tabTo(page, 'Zgodovina sprememb');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('listitem', { name: 'Revizija 1' })).toBeVisible();
 });

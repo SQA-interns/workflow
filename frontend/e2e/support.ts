@@ -105,3 +105,19 @@ export async function workbookText(path: string): Promise<string> {
   const { execFileSync } = await import('node:child_process');
   return execFileSync('unzip', ['-p', path], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 }
+
+/** Presses Tab until the focused element has this accessible name (keyboard-only navigation). */
+export async function tabTo(page: Page, name: string, max = 60): Promise<void> {
+  for (let i = 0; i < max; i++) {
+    await page.keyboard.press('Tab');
+    const focused = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el) return '';
+      const id = el.getAttribute('id');
+      const label = id ? document.querySelector(`label[for="${id}"]`)?.textContent : null;
+      return (el.getAttribute('aria-label') ?? label ?? el.textContent ?? '').trim();
+    });
+    if (focused === name) return;
+  }
+  throw new Error(`Could not reach "${name}" with the keyboard`);
+}
