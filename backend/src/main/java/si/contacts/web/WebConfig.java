@@ -13,12 +13,17 @@ import si.contacts.auth.AuthFilter;
 import si.contacts.auth.CurrentUserResolver;
 import si.contacts.auth.TokenVerifier;
 import si.contacts.user.UserService;
+import si.contacts.workspace.MembershipInterceptor;
+import si.contacts.workspace.WorkspaceAccess;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
   private final String[] allowedOrigins;
+  private final WorkspaceAccess access;
 
-  public WebConfig(@Value("${app.cors.allowed-origins:}") String origins) {
+  public WebConfig(@Value("${app.cors.allowed-origins:}") String origins, WorkspaceAccess access) {
+    this.access = access;
     this.allowedOrigins = Arrays.stream(origins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toArray(String[]::new);
   }
 
@@ -32,6 +37,11 @@ public class WebConfig implements WebMvcConfigurer {
           .allowedHeaders("Authorization", "Content-Type")
           .exposedHeaders("Content-Disposition");
     }
+  }
+
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(new MembershipInterceptor(access)).addPathPatterns("/api/workspaces/*", "/api/workspaces/*/**");
   }
 
   @Override
@@ -54,8 +64,9 @@ public class WebConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  FilterRegistrationBean<AuthFilter> authFilter(TokenVerifier verifier, UserService users) {
-    var b = new FilterRegistrationBean<>(new AuthFilter(verifier, users));
+  FilterRegistrationBean<AuthFilter> authFilter(
+      TokenVerifier verifier, UserService users, @Value("${app.rate-limit.per-address-per-minute}") int perAddress) {
+    var b = new FilterRegistrationBean<>(new AuthFilter(verifier, users, new AddressLimiter(perAddress)));
     b.setOrder(3);
     return b;
   }

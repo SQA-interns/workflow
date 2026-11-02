@@ -26,10 +26,10 @@ Every error body is a list of field errors:
 | 400 | validation error; `field` names the offending field (`name`, `email`, `attributes[2].key`, `tags[0]`, ...) |
 | 401 | missing, malformed, expired or foreign token |
 | 403 | the caller's Role does not allow the action |
-| 404 | not found, **or the caller is not a Member** (identical body: `{"errors":[{"field":null,"message":"not found"}]}`) |
+| 404 | not found, **or the caller is not a Member** (decided before the body is read, so a non-Member never gets 400) (identical body: `{"errors":[{"field":null,"message":"not found"}]}`) |
 | 409 | outdated `version`, duplicate Member, last Owner, Tag name taken, purge of an active Contact, Restore of a stale Revision |
 | 413 | request body larger than 1 MB |
-| 429 | rate limit (per User, default 300 requests per minute) |
+| 429 | rate limit: per User, default 300 requests per minute; requests without a valid token, per client address, default 60 per minute |
 
 ## User
 

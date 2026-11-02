@@ -13,7 +13,7 @@ import tools.jackson.databind.JsonNode;
 
 /** Base for acceptance tests through the REST API against a real PostgreSQL. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@org.springframework.test.context.TestPropertySource(properties = {"app.rate-limit.requests-per-minute=1000000", "app.auth.emulator=true", "app.auth.project-id=" + Tokens.PROJECT})
+@org.springframework.test.context.TestPropertySource(properties = {"app.rate-limit.requests-per-minute=1000000", "app.rate-limit.per-address-per-minute=1000000", "app.auth.emulator=true", "app.auth.project-id=" + Tokens.PROJECT})
 public abstract class ApiTestBase {
   static final PostgreSQLContainer DB = new PostgreSQLContainer("postgres:16.15-alpine");
 

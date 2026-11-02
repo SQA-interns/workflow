@@ -114,7 +114,7 @@ public class ContactSearchStore {
                 + " c.phone_norm = :phone AS m_phone, c.name_norm = :name AS m_name FROM contacts c"
                 + " WHERE c.workspace_id = :ws AND NOT c.deleted AND c.id <> :id"
                 + " AND (c.email_norm = :email OR c.phone_norm = :phone OR c.name_norm = :name)"
-                + " ORDER BY c.sort_last NULLS LAST, c.sort_first NULLS LAST, c.id LIMIT 20")
+                + " ORDER BY c.sort_last NULLS LAST, c.sort_first NULLS LAST, c.id")
         .param("ws", s.workspaceId())
         .param("id", c.id())
         .param("email", email)

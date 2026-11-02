@@ -100,6 +100,27 @@ class IsolationApiTest extends ApiTestBase {
   }
 
   @Test
+  void AC_004_01_aNonMemberGets404EvenForMalformedBodies() {
+    TestUser stranger = user("Tujec");
+    String missingBody = api.get(stranger.token(), "/api/workspaces/" + UUID.randomUUID()).body();
+    String c = "/api/workspaces/" + w + "/contacts/" + contactId;
+    for (String ws : List.of(w, UUID.randomUUID().toString())) {
+      for (String[] call : List.of(
+          new String[] {"POST", "/api/workspaces/" + ws + "/contacts"},
+          new String[] {"PUT", c.replace(w, ws)},
+          new String[] {"PATCH", "/api/workspaces/" + ws},
+          new String[] {"POST", "/api/workspaces/" + ws + "/members"},
+          new String[] {"POST", "/api/workspaces/" + ws + "/merge"},
+          new String[] {"POST", "/api/workspaces/" + ws + "/export"})) {
+        Api.Res r = api.sendRaw(stranger.token(), call[0], call[1], "{not json", Map.of());
+        assertThat(r.status()).as(call[0] + " " + call[1]).isEqualTo(404);
+        assertThat(r.body()).isEqualTo(missingBody);
+      }
+    }
+    assertThat(api.sendRaw(owner.token(), "POST", "/api/workspaces/" + w + "/contacts", "{not json", Map.of()).status()).isEqualTo(400);
+  }
+
+  @Test
   void AC_004_02_aContactCannotBeReadOrChangedThroughAnotherWorkspacesPath() {
     String mine = createWorkspace(owner, "Moj drugi");
     for (Call call : everyEndpoint(mine, contactId)) {

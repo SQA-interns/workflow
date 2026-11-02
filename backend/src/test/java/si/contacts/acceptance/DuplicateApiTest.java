@@ -96,6 +96,14 @@ class DuplicateApiTest extends ApiTestBase {
   }
 
   @Test
+  void possibleDuplicatesListEveryMatch() {
+    for (int i = 0; i < 25; i++) add("firstName", "K" + i, "email", "skupni@example.si");
+    Api.Res r = api.post(owner.token(), contacts, contact("firstName", "Nov", "email", "SKUPNI@example.si"));
+    assertThat(r.status()).isEqualTo(201);
+    assertThat(r.json().get("possibleDuplicates").size()).isEqualTo(25);
+  }
+
+  @Test
   void AC_010_06_createAndUpdateReturnPossibleDuplicatesWithoutBlockingTheSave() {
     String a = add("firstName", "Ana", "lastName", "Kos", "email", "ana@example.si", "phone", "041 222 333");
     Api.Res created = api.post(owner.token(), contacts, contact("firstName", "ANA", "lastName", "kos", "email", "Ana@Example.si"));
