@@ -1,0 +1,3 @@
+# Single-tenant: one deployment serves one organization
+
+The product is meant to compete with other CRMs, which are usually multi-tenant SaaS. Even so, each deployment serves exactly one organization: all Users see the same Contacts, Tags and Attribute Keys, and duplicate detection covers the whole database. We chose this to keep the data model, authorization and queries simple for v1, in line with the product's main selling point of being easy to use. If another organization needs the system, it gets its own deployment and its own database. Moving to true multi-tenancy later would mean adding an organization boundary to every table, query and permission check.
