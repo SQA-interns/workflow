@@ -48,10 +48,7 @@ export function formFrom(c: Contact): FormValues {
 }
 
 export function splitTags(text: string): string[] {
-  return text
-    .split(/[\s,]+/)
-    .map((t) => t.trim())
-    .filter((t) => t.length > 0);
+  return text.split(/[\s,]/).filter((t) => t !== '');
 }
 
 export function toInput(v: FormValues): ContactInput {
@@ -106,8 +103,4 @@ export function tagsError(errors: Record<string, string>): string | undefined {
   if (errors.tags) return errors.tags;
   const key = Object.keys(errors).find((k) => k.startsWith('tags['));
   return key ? errors[key] : undefined;
-}
-
-export function attributesError(errors: Record<string, string>): string | undefined {
-  return errors.attributes;
 }

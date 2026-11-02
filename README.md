@@ -28,8 +28,12 @@ The backend refuses to start with the `prod` profile if the Auth emulator is con
 
 | Seam | Command | Needs |
 |---|---|---|
-| REST API acceptance tests (Testcontainers PostgreSQL), architecture rule | `cd backend && ./mvnw test` | Docker |
-| Frontend component tests (API client faked) | `cd frontend && npm ci && npm test` | Node 24 |
+| REST API acceptance tests (Testcontainers PostgreSQL and the Firebase Auth Emulator), unit tests, architecture rule | `cd backend && ./mvnw test` | Docker |
+| Backend line coverage gate (JaCoCo, >= 95 %) | `cd backend && ./mvnw verify` | Docker |
+| Backend mutation gate (PIT, >= 90 %) | `cd backend && ./mvnw test-compile org.pitest:pitest-maven:mutationCoverage` | Docker, about 15 min |
+| Frontend component and unit tests (API client faked) | `cd frontend && npm ci && npm test` | Node 24 |
+| Frontend line coverage gate (Vitest v8, >= 95 %) | `cd frontend && npm run coverage` | Node 24 |
+| Frontend mutation gate (Stryker, >= 90 %) | `cd frontend && npm run mutation` | Node 24, about 30 min |
 | End-to-end E2E-01 … E2E-07 with axe-core | `docker compose up -d --wait && cd frontend && npx playwright test` | running stack |
 | Type check | `cd frontend && npm run typecheck` | |
 

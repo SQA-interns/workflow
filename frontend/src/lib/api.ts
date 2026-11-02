@@ -232,15 +232,13 @@ export function httpApi(getToken: () => Promise<string | null>, base = ''): Api 
     const res = await fetch(base + path, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
-      let errors: FieldError[] = [];
-      try {
-        errors = ((await res.json()) as { errors?: FieldError[] }).errors ?? [];
-      } catch {
-        errors = [];
-      }
+      const errors = await res.json().then(
+        (j: { errors?: FieldError[] }) => j.errors ?? [],
+        () => [],
+      );
       throw new ApiError(res.status, errors);
     }
     return res;

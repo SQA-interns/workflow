@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { ApiError, PREDEFINED_FIELDS, type PossibleDuplicate } from '../lib/api';
 import { useApi } from '../lib/context';
 import { errorText, fieldErrors } from '../lib/messages';
+import { useLoad } from '../lib/useLoad';
 import { FIELD_LABEL, emptyForm, formFrom, tagsError, toInput, validate, type FormValues } from '../lib/contactForm';
 import { can } from '../lib/roles';
 import { FormField } from '../components/FormField';
@@ -15,38 +16,24 @@ export function ContactFormPage() {
   const api = useApi();
   const navigate = useNavigate();
   const { workspace } = useWorkspace();
+  const loaded = useLoad(() => (cid ? api.getContact(workspace.id, cid) : Promise.resolve(null)), [api, workspace.id, cid]);
   const [values, setValues] = useState<FormValues>(emptyForm());
-  const [contactId, setContactId] = useState<string | undefined>(cid);
-  const [version, setVersion] = useState<number | null>(null);
+  // The Contact being edited (or just created) and the version the next save is based on.
+  const [current, setCurrent] = useState<{ id: string; version: number } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<PossibleDuplicate[]>([]);
-  const [loading, setLoading] = useState(!!cid);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!cid) return;
-    let active = true;
-    api.getContact(workspace.id, cid).then(
-      (c) => {
-        if (!active) return;
-        setValues(formFrom(c));
-        setVersion(c.version);
-        setLoading(false);
-      },
-      (e: unknown) => {
-        if (!active) return;
-        setFailure(errorText(e));
-        setLoading(false);
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [api, workspace.id, cid]);
+    if (!loaded.data) return;
+    setValues(formFrom(loaded.data));
+    setCurrent({ id: loaded.data.id, version: loaded.data.version });
+  }, [loaded.data]);
 
   if (!can(workspace.role, 'EDITOR')) return <Alert>Za urejanje kontaktov nimate pravic.</Alert>;
-  if (loading) return <p role="status">Nalaganje …</p>;
+  if (loaded.error) return <Alert>{errorText(loaded.error)}</Alert>;
+  if (loaded.loading || (cid && !current)) return <p role="status">Nalaganje …</p>;
 
   const setField = (f: string, v: string) => setValues((old) => ({ ...old, fields: { ...old.fields, [f]: v } }));
   const setAttr = (i: number, part: 'key' | 'value', v: string) =>
@@ -62,13 +49,11 @@ export function ContactFormPage() {
     setBusy(true);
     try {
       const input = toInput(values);
-      const saved =
-        contactId && version !== null
-          ? await api.updateContact(workspace.id, contactId, version, input)
-          : await api.createContact(workspace.id, input);
+      const saved = current
+        ? await api.updateContact(workspace.id, current.id, current.version, input)
+        : await api.createContact(workspace.id, input);
       if (saved.possibleDuplicates.length > 0) {
-        setContactId(saved.id);
-        setVersion(saved.version);
+        setCurrent({ id: saved.id, version: saved.version });
         setValues(formFrom(saved));
         setDuplicates(saved.possibleDuplicates);
       } else {
@@ -85,11 +70,11 @@ export function ContactFormPage() {
 
   return (
     <section>
-      <h1>{contactId ? 'Uredi kontakt' : 'Nov kontakt'}</h1>
+      <h1>{current ? 'Uredi kontakt' : 'Nov kontakt'}</h1>
       <DuplicateWarning wid={workspace.id} duplicates={duplicates} />
-      {duplicates.length > 0 && contactId && (
+      {current && duplicates.length > 0 && (
         <p>
-          <Link to={`/w/${workspace.id}/kontakti/${contactId}`}>Odpri shranjeni kontakt</Link>
+          <Link to={`/w/${workspace.id}/kontakti/${current.id}`}>Odpri shranjeni kontakt</Link>
         </p>
       )}
       {failure && <Alert>{failure}</Alert>}
@@ -141,7 +126,7 @@ export function ContactFormPage() {
           <button type="submit" className="primary" disabled={busy}>
             Shrani
           </button>
-          <Link to={contactId ? `/w/${workspace.id}/kontakti/${contactId}` : `/w/${workspace.id}`}>Prekliči</Link>
+          <Link to={current ? `/w/${workspace.id}/kontakti/${current.id}` : `/w/${workspace.id}`}>Prekliči</Link>
         </div>
       </form>
     </section>

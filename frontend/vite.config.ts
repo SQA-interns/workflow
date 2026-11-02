@@ -9,5 +9,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./test/setup.ts'],
     include: ['test/**/*.test.tsx', 'test/**/*.test.ts'],
+    // Quality gate (spec #1): line coverage >= 95 % over all production code.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**'],
+      reporter: ['text-summary', 'json-summary', 'html'],
+      thresholds: { lines: 95 },
+    },
   },
 });

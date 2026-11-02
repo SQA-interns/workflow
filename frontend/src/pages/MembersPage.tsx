@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import type { Role } from '../lib/api';
-import { useApi, useUser } from '../lib/context';
+import { useApi } from '../lib/context';
 import { useLoad } from '../lib/useLoad';
 import { errorText, fieldErrors } from '../lib/messages';
 import { ROLE_LABEL, can } from '../lib/roles';
@@ -16,7 +16,6 @@ export function MembersPage() {
   const navigate = useNavigate();
   const me = useLoad(() => api.me(), [api]);
   const { workspace } = useWorkspace();
-  const user = useUser();
   const isOwner = can(workspace.role, 'OWNER');
   const list = useLoad(() => api.listMembers(workspace.id), [api, workspace.id]);
   const [email, setEmail] = useState('');
@@ -71,7 +70,7 @@ export function MembersPage() {
           </thead>
           <tbody>
             {list.data.members.map((m) => {
-              const self = me.data?.id === m.userId || (!me.data && m.email === user?.email);
+              const self = me.data?.id === m.userId;
               return (
                 <tr key={m.userId}>
                   <td>{m.displayName ?? '—'}</td>

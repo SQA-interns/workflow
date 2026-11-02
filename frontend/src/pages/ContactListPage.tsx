@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import type { Contact, ContactPage } from '../lib/api';
+import type { Contact } from '../lib/api';
 import { useApi } from '../lib/context';
 import { errorText } from '../lib/messages';
+import { useLoad } from '../lib/useLoad';
 import { PAGE_SIZE, filterOf, queryFromParams } from '../lib/listQuery';
 import { can } from '../lib/roles';
 import { Alert } from '../components/Alert';
@@ -39,31 +40,14 @@ export function ContactListPage({ deleted = false }: { deleted?: boolean }) {
   const { workspace } = useWorkspace();
   const [params, setParams] = useSearchParams();
   const query = useMemo(() => ({ ...queryFromParams(params), deleted }), [params, deleted]);
-  const [page, setPage] = useState<ContactPage | null>(null);
-  const [error, setError] = useState<unknown>(null);
+  const key = JSON.stringify(query);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const result = useLoad(() => api.listContacts(workspace.id, query), [api, workspace.id, key]);
+  const page = result.data;
+  const error = result.error;
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exportError, setExportError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const key = JSON.stringify(query);
-
-  useEffect(() => {
-    let active = true;
-    api.listContacts(workspace.id, query).then(
-      (p) => {
-        if (active) {
-          setPage(p);
-          setError(null);
-        }
-      },
-      (e: unknown) => {
-        if (active) setError(e);
-      },
-    );
-    return () => {
-      active = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [api, workspace.id, key]);
 
   // Several debounced inputs may fire before a re-render; build on the latest params, not the rendered ones.
   const latest = useRef(params);
