@@ -156,6 +156,29 @@ class ContactApiTest extends ApiTestBase {
   }
 
   @Test
+  void theVersionMustBeAWholeNumber() {
+    String path = contacts + "/" + createContact(owner, w, contact("firstName", "A")).get("id").asText();
+    for (Object bad : new Object[] {1.5, "1", true}) {
+      Api.Res r = api.put(owner.token(), path, contact("version", bad, "firstName", "B"));
+      assertThat(r.status()).as(String.valueOf(bad)).isEqualTo(400);
+      assertThat(errorFields(r)).containsExactly("version");
+    }
+    Api.Res whole = api.put(owner.token(), path, "{\"version\": 1.0, \"firstName\": \"B\"}");
+    assertThat(whole.status()).isEqualTo(200);
+    assertThat(api.put(owner.token(), contacts + "/" + createContact(owner, w, contact("firstName", "D")).get("id").asText(),
+        contact("version", 1, "firstName", "x".repeat(101))).status()).isEqualTo(400);
+  }
+
+  @Test
+  void aDeletedContactCannotBeChanged() {
+    String path = contacts + "/" + createContact(owner, w, contact("firstName", "A")).get("id").asText();
+    api.delete(owner.token(), path);
+    Api.Res r = api.put(owner.token(), path, contact("version", 2, "firstName", "B"));
+    assertThat(r.status()).isEqualTo(409);
+    assertThat(r.json().get("errors").get(0).get("message").asText()).isEqualTo("contact is deleted");
+  }
+
+  @Test
   void anUnknownContactGets404() {
     assertThat(api.get(owner.token(), contacts + "/" + java.util.UUID.randomUUID()).status()).isEqualTo(404);
     assertThat(api.get(owner.token(), contacts + "/nope").status()).isEqualTo(404);

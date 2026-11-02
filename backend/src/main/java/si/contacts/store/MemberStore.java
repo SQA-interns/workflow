@@ -55,13 +55,6 @@ public class MemberStore {
         .single();
   }
 
-  public boolean isMember(WorkspaceScope s, UUID userId) {
-    return db.sql("SELECT EXISTS (SELECT 1 FROM memberships WHERE workspace_id = ? AND user_id = ?)")
-        .params(s.workspaceId(), userId)
-        .query(Boolean.class)
-        .single();
-  }
-
   public void addMember(WorkspaceScope s, UUID userId, String role) {
     db.sql("INSERT INTO memberships (workspace_id, user_id, role) VALUES (?, ?, ?)").params(s.workspaceId(), userId, role).update();
   }

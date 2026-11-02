@@ -60,7 +60,6 @@ public class MemberController {
     var existing = users.findVerifiedByEmail(lower);
     if (existing.isPresent()) {
       User u = existing.get();
-      if (members.isMember(s, u.id())) throw ApiException.conflict("email", "already a member or invited");
       members.addMember(s, u.id(), role.name());
       return Map.of("status", "MEMBER", "member", view(members.member(s, u.id()).orElseThrow()));
     }

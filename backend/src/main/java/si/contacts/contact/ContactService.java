@@ -52,10 +52,7 @@ public class ContactService {
     s.require(Role.EDITOR);
     if (version == null) throw ApiException.badRequest("version", "required");
     Contact current = get(s, id);
-    if (current.state().deleted()) {
-      if (current.version() != version) throw ApiException.outdatedVersion();
-      throw ApiException.conflict(null, "contact is deleted");
-    }
+    if (current.state().deleted()) throw ApiException.conflict(null, "contact is deleted");
     return write(s, current, version, input, "UPDATE");
   }
 

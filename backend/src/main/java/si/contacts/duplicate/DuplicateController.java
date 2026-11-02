@@ -6,13 +6,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import si.contacts.contact.Contact;
-import si.contacts.contact.Normalize;
+import si.contacts.contact.ContactOrder;
 import si.contacts.store.ContactStore;
 import si.contacts.store.DuplicateStore;
 import si.contacts.store.DuplicateStore.Key;
@@ -33,55 +32,48 @@ public class DuplicateController {
     this.contacts = contacts;
   }
 
+  /** One normalised value shared by several Contacts. */
+  record Match(String kind, String value, List<UUID> contactIds) {}
+
+  record DuplicateSet(List<Contact> contacts, List<Match> matches) {}
+
   @GetMapping("/api/workspaces/{wid}/duplicate-sets")
   List<Map<String, Object>> sets(User user, @PathVariable UUID wid) {
     WorkspaceScope s = access.open(wid, user);
-    List<Key> keys = duplicates.sharedKeys(s);
-    Map<String, List<UUID>> byValue = new LinkedHashMap<>();
-    for (Key k : keys) byValue.computeIfAbsent(k.kind() + "\u0000" + k.value(), x -> new ArrayList<>()).add(k.contactId());
+    return group(duplicates.sharedKeys(s), ids -> contacts.load(s, ids)).stream().map(DuplicateController::view).toList();
+  }
 
+  /** Groups the shared keys transitively (union-find); sets and their Contacts in the list's default order. */
+  static List<DuplicateSet> group(List<Key> keys, java.util.function.Function<List<UUID>, List<Contact>> load) {
+    Map<String, Match> matches = new LinkedHashMap<>();
+    for (Key k : keys)
+      matches.computeIfAbsent(k.kind() + "\u0000" + k.value(), x -> new Match(k.kind(), k.value(), new ArrayList<>())).contactIds().add(k.contactId());
     Map<UUID, UUID> parent = new HashMap<>();
-    for (List<UUID> group : byValue.values()) for (UUID id : group) union(parent, group.get(0), id);
-
+    for (Match m : matches.values()) for (UUID id : m.contactIds()) union(parent, m.contactIds().get(0), id);
     Map<UUID, List<UUID>> members = new LinkedHashMap<>();
     for (UUID id : parent.keySet()) members.computeIfAbsent(find(parent, id), x -> new ArrayList<>()).add(id);
-
-    List<Map<String, Object>> out = new ArrayList<>();
-    for (List<UUID> ids : members.values()) {
-      List<Contact> loaded = new ArrayList<>(contacts.load(s, ids));
-      loaded.sort(ORDER);
-      UUID root = find(parent, ids.get(0));
-      List<Map<String, Object>> matches = new ArrayList<>();
-      byValue.forEach(
-          (kv, group) -> {
-            if (!find(parent, group.get(0)).equals(root)) return;
-            String[] parts = kv.split("\u0000", 2);
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("contactIds", group);
-            m.put("kind", parts[0]);
-            m.put("value", parts[1]);
-            matches.add(m);
-          });
-      Map<String, Object> set = new LinkedHashMap<>();
-      set.put("contacts", loaded.stream().map(Contact::toJson).toList());
-      set.put("matches", matches);
-      out.add(set);
+    List<DuplicateSet> out = new ArrayList<>();
+    for (Map.Entry<UUID, List<UUID>> e : members.entrySet()) {
+      List<Contact> loaded = new ArrayList<>(load.apply(e.getValue()));
+      loaded.sort(ContactOrder.DEFAULT);
+      List<Match> own = matches.values().stream().filter(m -> find(parent, m.contactIds().get(0)).equals(e.getKey())).toList();
+      out.add(new DuplicateSet(loaded, own));
     }
-    out.sort(Comparator.comparing(m -> sortKey(m)));
+    out.sort(Comparator.comparing((DuplicateSet d) -> d.contacts().get(0), ContactOrder.DEFAULT));
     return out;
   }
 
-  static final Comparator<Contact> ORDER =
-      Comparator.comparing((Contact c) -> Objects.toString(Normalize.text(c.state().field("lastName")), "￿"))
-          .thenComparing(c -> Objects.toString(Normalize.text(c.state().field("firstName")), "￿"))
-          .thenComparing(c -> c.id().toString());
-
-  @SuppressWarnings("unchecked")
-  static String sortKey(Map<String, Object> set) {
-    Map<String, Object> first = ((List<Map<String, Object>>) set.get("contacts")).get(0);
-    return Objects.toString(Normalize.text((String) first.get("lastName")), "￿")
-        + "\u0000" + Objects.toString(Normalize.text((String) first.get("firstName")), "￿")
-        + "\u0000" + first.get("id");
+  static Map<String, Object> view(DuplicateSet d) {
+    Map<String, Object> set = new LinkedHashMap<>();
+    set.put("contacts", d.contacts().stream().map(Contact::toJson).toList());
+    set.put("matches", d.matches().stream().map(m -> {
+      Map<String, Object> v = new LinkedHashMap<>();
+      v.put("contactIds", m.contactIds());
+      v.put("kind", m.kind());
+      v.put("value", m.value());
+      return v;
+    }).toList());
+    return set;
   }
 
   private static UUID find(Map<UUID, UUID> parent, UUID x) {

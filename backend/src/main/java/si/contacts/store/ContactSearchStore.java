@@ -77,7 +77,7 @@ public class ContactSearchStore {
 
   static String orderBy(ContactQuery q) {
     String dir = q.descending() ? "DESC" : "ASC";
-    String nulls = q.descending() ? "NULLS LAST" : "NULLS LAST";
+    String nulls = "NULLS LAST";
     return switch (q.sort()) {
       case "firstName" -> "c.sort_first " + dir + " " + nulls + ", c.sort_last " + dir + " " + nulls + ", c.id";
       case "company" -> "c.sort_company " + dir + " " + nulls + ", c.sort_last " + dir + " " + nulls + ", c.id";
@@ -103,7 +103,6 @@ public class ContactSearchStore {
 
   /** Active Contacts (other than {@code c}) sharing its normalised email, phone or full name. */
   public List<Map<String, Object>> possibleDuplicates(WorkspaceScope s, Contact c) {
-    if (c.state().deleted()) return List.of();
     String email = Normalize.email(c.state().field("email"));
     String phone = Normalize.phone(c.state().field("phone"));
     String name = Normalize.fullName(c.state().field("firstName"), c.state().field("lastName"));

@@ -86,7 +86,4 @@ public record ContactQuery(
     }
   }
 
-  public ContactQuery withPaging(int newPage, int newSize) {
-    return new ContactQuery(q, tags, tagModeAny, attrs, country, company, deleted, sort, descending, newPage, newSize);
-  }
 }

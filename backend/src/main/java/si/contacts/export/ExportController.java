@@ -5,11 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,8 +20,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import si.contacts.contact.Contact;
+import si.contacts.contact.ContactOrder;
 import si.contacts.contact.ContactQuery;
-import si.contacts.contact.Normalize;
 import si.contacts.store.ContactSearchStore;
 import si.contacts.store.ContactStore;
 import si.contacts.store.WorkspaceStore;
@@ -91,7 +89,7 @@ public class ExportController {
     List<Contact> found = new ArrayList<>(contacts.load(s, new ArrayList<>(ids)));
     if (found.size() != ids.size() || found.stream().anyMatch(c -> c.state().deleted()))
       throw ApiException.badRequest("contactIds", "invalid selection");
-    found.sort(DEFAULT_ORDER);
+    found.sort(ContactOrder.DEFAULT);
     return found;
   }
 
@@ -104,10 +102,6 @@ public class ExportController {
     return contacts.load(s, ids);
   }
 
-  static final Comparator<Contact> DEFAULT_ORDER =
-      Comparator.comparing((Contact c) -> Objects.toString(Normalize.text(c.state().field("lastName")), "￿"))
-          .thenComparing(c -> Objects.toString(Normalize.text(c.state().field("firstName")), "￿"))
-          .thenComparing(c -> c.id().toString());
 
   /** Letters, digits, - and _ only (ASCII when asked); spaces become -. */
   static String safe(String name, boolean ascii) {

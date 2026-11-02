@@ -32,6 +32,10 @@ class WorkspaceApiTest extends ApiTestBase {
       assertThat(r.status()).as("name '%s'", name).isEqualTo(400);
       assertThat(errorFields(r)).containsExactly("name");
     }
+    Api.Res number = api.post(u.token(), "/api/workspaces", Map.of("name", 5));
+    assertThat(number.status()).isEqualTo(400);
+    assertThat(errorFields(number)).containsExactly("name");
+    assertThat(api.post(u.token(), "/api/workspaces", Map.of("name", "x".repeat(100))).status()).isEqualTo(201);
     Api.Res missing = api.post(u.token(), "/api/workspaces", Map.of());
     assertThat(missing.status()).isEqualTo(400);
     assertThat(errorFields(missing)).containsExactly("name");
@@ -57,6 +61,9 @@ class WorkspaceApiTest extends ApiTestBase {
     String w = createWorkspace(a, "Staro");
     Api.Res r = api.patch(a.token(), "/api/workspaces/" + w, Map.of("name", "Novo ime"));
     assertThat(r.status()).isEqualTo(200);
+    assertThat(r.json().get("name").asText()).isEqualTo("Novo ime");
+    assertThat(r.json().get("role").asText()).isEqualTo("OWNER");
+    assertThat(r.json().get("id").asText()).isEqualTo(w);
     assertThat(api.get(a.token(), "/api/workspaces/" + w).json().get("name").asText()).isEqualTo("Novo ime");
     assertThat(api.patch(a.token(), "/api/workspaces/" + w, Map.of("name", " ")).status()).isEqualTo(400);
   }

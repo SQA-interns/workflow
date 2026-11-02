@@ -50,6 +50,7 @@ class SearchApiTest extends ApiTestBase {
     assertThat(ids("?q=" + enc("saša đurić"))).containsExactly(sasa);
     assertThat(ids("?q=mark")).containsExactly(other);
     assertThat(ids("?q=" + enc("%"))).isEmpty();
+    assertThat(ids("?q=" + enc("\u0301"))).containsExactlyInAnyOrder(sasa, other);
   }
 
   @Test

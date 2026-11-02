@@ -48,6 +48,7 @@ class ExportApiTest extends ApiTestBase {
         for (int i = 0; i < width; i++) {
           Cell c = row.getCell(i);
           if (c != null) assertThat(c.getCellType()).isIn(CellType.STRING, CellType.BLANK);
+          if (c != null) assertThat(c.getCellStyle().getDataFormatString()).isEqualTo("@");
           cells.add(c == null ? "" : c.getStringCellValue());
         }
         out.add(cells);

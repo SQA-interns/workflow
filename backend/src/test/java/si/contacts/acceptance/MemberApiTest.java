@@ -152,5 +152,6 @@ class MemberApiTest extends ApiTestBase {
     String token = AuthEmulator.signUp(email, "P", true).token();
     assertThat(api.get(token, "/api/workspaces/" + w).status()).isEqualTo(404);
     assertThat(api.get(owner.token(), members(w)).json().get("invitations").size()).isZero();
+    assertThat(api.delete(owner.token(), "/api/workspaces/" + w + "/invitations/" + inv).status()).isEqualTo(404);
   }
 }

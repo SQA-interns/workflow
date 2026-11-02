@@ -56,8 +56,8 @@ class SignInApiTest extends ApiTestBase {
 
   @Test
   void healthAndReadinessNeedNoToken() {
-    assertThat(api.get(null, "/api/health").status()).isEqualTo(200);
-    assertThat(api.get(null, "/api/health/ready").status()).isEqualTo(200);
+    assertThat(api.get(null, "/api/health").json().get("status").asText()).isEqualTo("UP");
+    assertThat(api.get(null, "/api/health/ready").json().get("status").asText()).isEqualTo("UP");
   }
 
   @Test

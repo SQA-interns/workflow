@@ -104,9 +104,9 @@ public class MergeController {
 
     // Attributes: Survivor's first, then new keys in list order; the Survivor's value wins unless chosen.
     Map<String, Attribute> attrs = new LinkedHashMap<>();
-    List<Contact> survivorFirst = new ArrayList<>();
+    java.util.Set<Contact> survivorFirst = new java.util.LinkedHashSet<>();
     survivorFirst.add(survivor);
-    ordered.stream().filter(c -> !c.id().equals(survivor.id())).forEach(survivorFirst::add);
+    survivorFirst.addAll(ordered);
     for (Contact c : survivorFirst)
       for (Attribute a : c.state().attributes()) attrs.putIfAbsent(a.key().toLowerCase(Locale.ROOT), a);
     for (Map.Entry<String, UUID> e : attributeSources.entrySet()) {
