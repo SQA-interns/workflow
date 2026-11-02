@@ -13,6 +13,7 @@ import { MembersPage } from './pages/MembersPage';
 import { ContactListPage } from './pages/ContactListPage';
 import { ContactFormPage } from './pages/ContactFormPage';
 import { ContactPage } from './pages/ContactPage';
+import { TagsPage } from './pages/TagsPage';
 
 interface Props {
   api: Api;
@@ -45,6 +46,7 @@ export function App({ api, auth }: Props) {
                     <Route path="kontakti/nov" element={<ContactFormPage />} />
                     <Route path="kontakti/:cid" element={<ContactPage />} />
                     <Route path="kontakti/:cid/uredi" element={<ContactFormPage />} />
+                    <Route path="oznake" element={<TagsPage />} />
                     <Route path="clani" element={<MembersPage />} />
                     <Route path="nastavitve" element={<WorkspaceSettingsPage />} />
                   </Route>
