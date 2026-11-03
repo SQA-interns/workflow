@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Run Comparison</title>
+<style>
+__STYLE__
+</style></head><body>
+<div class="bar" id="bar" role="toolbar" aria-label="Choose the runs to show">
+  <span class="bl">Runs shown</span><span id="chips" style="display:contents"></span>
+  <span class="sp"></span>
+  <label title="Hide the rows of the topic tables where every shown run has the same value"><input type="checkbox" id="onlyDiff"> only rows that differ</label>
+  <button class="btn" id="bAll" type="button">All runs</button>
+  <button class="btn" id="bGate" type="button" title="Show only the runs that met the quality gate">Gate-passing only</button>
+</div>
+<main>
+<header><h1 id="title"></h1></header>
+
+<details class="panel" open>
+  <summary><h2>How to read this report</h2></summary>
+  <div class="body">
+    <ul class="how">
+      <li><b>Pick the runs.</b> The bar at the top shows or hides runs; every table and chart is redrawn. The × in a column header hides that run too, and any panel folds when you click its title.</li>
+      <li><b>Arrows.</b> <span class="dir">↓</span> lower is better, <span class="dir">↑</span> higher is better, <span class="dir">=</span> should equal the target shown, <span class="dir">i</span> context only.</li>
+      <li><b>Colours in the tables.</b> <span class="sw good"></span> green is the best value of a row, <span class="sw bad"></span> red is the worst (or a failed gate item). Rows where all runs are equal have no colour.</li>
+      <li><b>Waiting is excluded.</b> Agent time is wall time minus every wait for a human. A wait over one hour also expires the prompt cache; the rebuild that follows is a cost of the wait and is removed from the cost shown.</li>
+      <li><b>Same numbers for every run.</b> They come from the session transcript where one exists, and from <code>run-log.json</code> otherwise. Under each attribute is what we are trying to achieve.</li>
+      <li><b>Marks after a value.</b> <span class="mark">†</span> estimated, <span class="mark">‡</span> taken from a run summary or another file, <span class="mark">*</span> note; hover for details. “–” means the run did not record it.</li>
+    </ul>
+  </div>
+</details>
+
+<section><div class="kpis" id="kpis"></div></section>
+
+<details class="panel" open id="secGate">
+  <summary><h2>Quality gate</h2></summary>
+  <div class="body"><div class="scroll"><table id="gate"></table></div>
+    <p class="note">Every run of a setup must reach the same quality; what differs is what it cost. A run below the gate delivered something else and is <b>not comparable</b>: its cost is shown hollow in the charts and left out of "Cost to reach the gate". Test counts are not part of the gate, they are a cost driver. A criterion marked “?” could not be assessed (the run has no such component, or an older log lacks the figure) and does not fail the gate. Mutation scopes of runs before template 1.3 differ, so their scores are only indicative.</p></div>
+</details>
+
+<details class="panel" open id="secSetups" hidden>
+  <summary><h2>Setups: runs of the same template version, median and range</h2></summary>
+  <div class="body"><div class="scroll"><table id="setups"></table></div>
+    <p class="note" id="setupsNote"></p></div>
+</details>
+
+<div id="groups" class="stack"></div>
+
+<div class="grid2">
+  <details class="panel" open><summary><h2>Agent time (minutes) ↓</h2></summary><div class="body"><div class="legend"><span><i style="background:var(--k-model)"></i>Model time</span><span><i style="background:var(--k-tool)"></i>Tool time</span><span><i style="background:var(--k-other)"></i>Other / not split</span></div><div id="chTime"></div>
+    <p class="note">Model and tool time need the transcript. Without it the whole bar is agent time.</p></div></details>
+  <details class="panel" open><summary><h2>Cost excl. waits ($) ↓</h2></summary><div class="body"><div class="legend"><span><i style="background:var(--k-cr)"></i>Cache read</span><span><i style="background:var(--k-cw)"></i>Cache write</span><span><i style="background:var(--k-out)"></i>Output</span><span><i class="hatch"></i>Rebuild caused by waits (removed, for reference)</span></div><div id="chCost"></div></div></details>
+  <details class="panel" open><summary><h2>Quality reached against the gate ↑</h2></summary><div class="body"><div class="legend"><span><i style="background:var(--q-1)"></i>Backend line coverage</span><span><i style="background:var(--q-2)"></i>Frontend line coverage</span><span><i style="background:var(--q-3)"></i>Backend mutation (adjusted)</span><span><i style="background:var(--q-4)"></i>Frontend mutation (adjusted)</span></div><div id="chQual"></div>
+    <p class="note">Dashed lines are the thresholds of the gate (line coverage 95 %, adjusted mutation 90 %). A bar that ends short of its line missed the gate.</p></div></details>
+  <details class="panel" open><summary><h2>Work done: calls and tests</h2></summary><div class="body"><div class="legend"><span><i style="background:var(--q-1)"></i>Model calls</span><span><i style="background:var(--q-2)"></i>Tool calls</span><span><i style="background:var(--q-3)"></i>Tests at the end</span><span><i style="background:var(--q-4)"></i>Commits</span></div><div id="chWork"></div>
+    <p class="note">Calls and context are what the cost is made of; tests and commits show how much was produced for it. Counts, not a quality measure.</p></div></details>
+  <details class="panel" open><summary><h2>Cost against agent time</h2></summary><div class="body"><div id="chScatter"></div>
+    <p class="note">Closer to the bottom left is better. Colour is the series. A hollow dot is a run below the quality gate: not comparable. Runs differ in person, machine and template, so read position as a hint, not a ranking.</p></div></details>
+  <details class="panel" open><summary><h2>Average context per call by phase (k tokens) ↓</h2></summary><div class="body"><div class="legend" id="lgRuns"></div><div id="chCtx"></div>
+    <p class="note">Every call re-reads the whole context at cache-read price, so the late phases cost the most per call. Only runs with a transcript.</p></div></details>
+</div>
+
+<details class="panel" open>
+  <summary><h2>Agent minutes per phase</h2></summary>
+  <div class="body"><div class="scroll"><table id="phases"></table></div>
+    <p class="note">Goal: low overhead phases (0, 1, 2, 7). Phases 4 to 6 hold the real work, so more time there can mean more testing, not waste.</p></div>
+</details>
+
+<details class="panel" open id="secCommits" hidden>
+  <summary><h2>Commits</h2></summary>
+  <div class="body"><h3>Changed lines per commit (dashed line: size guide of 400)</h3>
+    <div class="legend"><span><i style="background:var(--k-model)"></i>one concern</span><span><i style="background:var(--k-mixed)"></i>mixes concerns</span><span><i style="background:var(--warn)"></i>over the size guide</span></div>
+    <div id="chCommits"></div>
+    <p class="note">Hover a bar for subject, cost and minutes since the previous commit. Small steady steps are the goal: no commit above the guide, no mixing of code, tests, documents and build changes, and no bursts of several commits within a minute.</p>
+    <div class="scroll" style="margin-top:16px"><table id="commitTable"></table></div></div>
+</details>
+
+<details class="panel" open>
+  <summary><h2>Environment: declared by the operator</h2></summary>
+  <div class="body"><div class="scroll"><table id="envDecl"></table></div>
+    <p class="note">Typed into run-config.md by hand, so it can be wrong (for example copied from another operator's template). A red cell means the session itself contradicts the declaration (hover for why).</p></div>
+</details>
+<details class="panel" open>
+  <summary><h2>Environment: the session</h2></summary>
+  <div class="body"><div class="scroll"><table id="envSession"></table></div>
+    <p class="note">Read from the session transcript. Harness version, effort and permission mode all change cost and speed.</p></div>
+</details>
+<details class="panel" open>
+  <summary><h2>Environment: machine and tools</h2></summary>
+  <div class="body"><div class="scroll"><table id="envMachine"></table></div>
+    <p class="note">Read by <code>stat.mjs init</code> at the start of the run; the last row is the machine the post-run report was measured on.</p></div>
+</details>
+
+<details class="panel" open>
+  <summary><h2>Trust in the measurement</h2></summary>
+  <div class="body"><div class="scroll"><table id="checks"></table></div>
+    <p class="note">Every number in this report is calculated from the session transcript, the sub-agent transcripts and git, and from the run-log written by the clock tool; nothing is typed in by hand. These rows show how complete that evidence was.</p></div>
+</details>
+
+<details class="panel" open>
+  <summary><h2>Waits that were excluded</h2></summary>
+  <div class="body"><div class="scroll"><table id="waits"></table></div></div>
+</details>
+
+<details class="panel" open>
+  <summary><h2>Where the data comes from, and what to keep in mind</h2></summary>
+  <div class="body"><div class="scroll"><table id="sources"></table></div>
+  <ul class="note" id="excluded" style="padding-left:20px;margin:16px 0 0"></ul></div>
+</details>
+</main>
+
+<script>
+const D=__DATA__;
+const $=id=>document.getElementById(id);
+const ALL=D.runs.map((r,i)=>(r.i=i,r)), C=D.catalog.metrics, G=D.catalog.groups;
+const seriesList=[...new Set(ALL.map(r=>r.series))];
+const col=r=>"var(--s-"+((seriesList.indexOf(r.series)%8)+1)+")";
+const off=new Set();            // indices of hidden runs
+let R=ALL.slice();              // the runs shown
+$("title").textContent=D.title;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sl=(s,n)=>{s=String(s);return s.length>n?s.slice(0,n-1)+"…":s};
+const leftM=rs=>Math.min(210,Math.max(96,Math.round(7*Math.max(0,...rs.map(r=>sl(r.label,30).length))+16)));
+const lab=(r,x,y,anchor)=>`<text x="${x}" y="${y}" text-anchor="${anchor||"end"}"><title>${esc(r.label)}</title>${esc(sl(r.label,30))}</text>`;
+const fmt=(u,v)=>{if(v==null)return "–";
+ switch(u){case"min":return v>=100?Math.round(v).toLocaleString("en-US"):(Math.round(v*10)/10)+"";
+  case"min2":return v.toFixed(2);case"usd":return "$"+v.toFixed(2);case"usd3":return "$"+v.toFixed(3);
+  case"pct":return (Math.round(v*10)/10)+" %";case"k":return Math.round(v)+"k";case"ratio":return v.toFixed(2);case"yesno":return v===1?"yes":v===0?"no":"?";
+  default:return Math.round(v).toLocaleString("en-US")}};
+const arrow={lower:"↓",higher:"↑",target:"=",info:"i"};
+const val=(r,id)=>r.metrics[id]||{v:null};
+const MARK={e:["†","estimated"],o:["‡","from another file"]};
+const maxOf=(xs,d)=>{xs=xs.filter(v=>v!=null&&isFinite(v));return xs.length?Math.max(...xs):d};
+
+// --- tables: fixed column widths, so a value never sits in a wide, mostly empty cell
+const runTh=r=>`<th title="${esc(r.label)}"><span class="rn">${esc(r.label)}</span><span class="rt">template ${esc(r.template)}</span><button class="hx" type="button" data-hide="${r.i}" aria-label="Hide ${esc(r.label)}" title="Hide this run">×</button></th>`;
+// the table fills its panel: first column fixed, the run columns share the rest
+function table(id,firstHead,rows,opts){const o=Object.assign({attrW:300},opts||{});const el=$(id);
+ if(!R.length){el.innerHTML="";return}
+ el.style.minWidth=(o.attrW+R.length*130)+"px";
+ el.innerHTML=`<colgroup><col style="width:${o.attrW}px">${R.map(()=>"<col>").join("")}</colgroup><thead><tr><th class="fh">${firstHead}</th>${R.map(runTh).join("")}</tr></thead><tbody>${rows.join("")}</tbody>`}
+const grpRow=t=>`<tr class="grp"><td colspan="${R.length+1}">${esc(t)}</td></tr>`;
+const textRow=(n,f,cls)=>`<tr><td>${esc(n)}</td>${R.map(r=>{const x=f(r);const c=x&&typeof x==="object"?x:{t:x};return `<td class="txt ${c.cls||cls||""}"${c.title?` title="${esc(c.title)}"`:""}>${esc(c.t==null||c.t===""?"–":c.t)}</td>`}).join("")}</tr>`;
+
+// --- toolbar
+function chips(){$("chips").innerHTML=ALL.map(r=>`<button class="chip" type="button" data-run="${r.i}" aria-pressed="${!off.has(r.i)}" title="${esc(r.label)} (template ${esc(r.template)}): click to ${off.has(r.i)?"show":"hide"}"><i style="background:${col(r)}"></i>${esc(r.label)}</button>`).join("")}
+document.addEventListener("click",e=>{const c=e.target.closest("[data-run]"),h=e.target.closest("[data-hide]");
+ if(c){const i=+c.dataset.run;if(off.has(i))off.delete(i);else if(off.size<ALL.length-1)off.add(i);else return}
+ else if(h){if(off.size<ALL.length-1)off.add(+h.dataset.hide);else return}
+ else return;
+ render()});
+$("bAll").onclick=()=>{off.clear();render()};
+$("bGate").onclick=()=>{const ok=ALL.filter(r=>val(r,"gateMet").v===1);if(!ok.length)return;off.clear();ALL.forEach(r=>{if(!ok.includes(r))off.add(r.i)});render()};
+$("onlyDiff").onchange=()=>render();
+
+// --- topic tables, one per group
+const gbox=$("groups");
+gbox.innerHTML=G.map(g=>`<details class="panel" open><summary><h2>${esc(g.label)}</h2></summary><div class="body"><div class="scroll"><table id="t_${g.id}"></table></div></div></details>`).join("");
+function groupTables(){const only=$("onlyDiff").checked;
+ for(const g of G){const ms=C.filter(x=>x.group===g.id);const det=$("t_"+g.id).closest("details");const rows=[];
+  for(const m of ms){
+   const vals=R.map(r=>val(r,m.id).v),nn=vals.filter(v=>v!=null);
+   if(only&&(new Set(vals.map(v=>v==null?"-":v)).size<2))continue;
+   let best=null,worst=null;if(new Set(nn).size>1&&m.dir==="lower"){best=Math.min(...nn);worst=Math.max(...nn)}if(new Set(nn).size>1&&m.dir==="higher"){best=Math.max(...nn);worst=Math.min(...nn)}
+   const tgt=m.dir==="target"?m.target:null;
+   const goal=(m.dir==="target"?`Target ${m.target}. `:m.dir==="lower"?"Lower is better. ":m.dir==="higher"?"Higher is better. ":"")+m.goal;
+   rows.push(`<tr><td class="attr" title="${esc(m.how)}"><span class="dir">${arrow[m.dir]}</span><b>${m.label}</b><small>${esc(goal)}</small></td>`+R.map(r=>{
+    const x=val(r,m.id),v=x.v;const cls=v==null?"miss":((best!=null&&v===best)||(tgt!=null&&v===tgt))?"best":(worst!=null&&v===worst)?"warnc":"";
+    const mk=x.src&&MARK[x.src]?`<span class="mark" title="${esc(MARK[x.src][1]+(x.note?": "+x.note:""))}">${MARK[x.src][0]}</span>`:(x.note?`<span class="mark" title="${esc(x.note)}">*</span>`:"");
+    return `<td class="${cls}">${fmt(m.unit,v)}${v!=null?mk:""}</td>`}).join("")+"</tr>")}
+  if(!rows.length){det.hidden=true;continue}det.hidden=false;
+  table("t_"+g.id,"Attribute and what we want",rows,{attrW:360})}}
+
+// --- key figures
+function kpis(){const hl=C.filter(m=>m.headline);
+ $("kpis").innerHTML=hl.map(m=>{const vs=R.map(r=>({r,v:val(r,m.id).v})).filter(x=>x.v!=null);
+  if(!vs.length)return "";
+  if(m.id==="gateMet")return `<div class="kpi"><b>${vs.filter(x=>x.v===1).length} of ${R.length}</b><span>runs met the quality gate; only these are comparable</span></div>`;
+  if(R.length===1)return `<div class="kpi"><b>${fmt(m.unit,vs[0].v)}</b><span>${m.label} ${arrow[m.dir]}</span></div>`;const best=vs.reduce((a,b)=>b.v<a.v?b:a);const worst=vs.reduce((a,b)=>b.v>a.v?b:a);
+  return `<div class="kpi"><b>${fmt(m.unit,best.v)} to ${fmt(m.unit,worst.v)}</b><span>${m.label} ${arrow[m.dir]}, ${vs.length} runs. Lowest: ${esc(best.r.label)}</span></div>`}).join("")+
+  (R.length===1?"":`<div class="kpi"><b>${R.length} runs</b><span>${R.filter(r=>r.sources.usage==="transcript").length} measured from a transcript, ${R.filter(r=>r.sources.usage!=="transcript").length} from logs and summaries</span></div>`)}
+
+// --- quality gate
+function gateTable(){const gs=R.map(r=>r.gate);
+ if(!gs.some(Boolean)){$("secGate").hidden=true;return}$("secGate").hidden=false;
+ const ids=[];gs.forEach(g=>g&&g.items.forEach(i=>{if(!ids.some(x=>x.id===i.id))ids.push({id:i.id,label:i.label,unit:i.unit})}));
+ const g0=gs.find(Boolean);const rows=[];
+ for(const c of ids){rows.push(`<tr><td class="attr"><b>${esc(c.label)}</b><small>${c.unit==="%"?"at or above "+(c.id.startsWith("cov")?g0.thresholds.lineCoverage:g0.thresholds.mutationScore)+" %":c.id==="allGreen"?"no failing test in the final run":"none open at the end"}</small></td>`+R.map(r=>{const g=r.gate,i=g&&g.items.find(x=>x.id===c.id);
+   if(!i)return `<td class="miss">–</td>`;
+   const cls=i.pass==null?"miss":i.pass?"best":"warnc",mark=i.pass==null?"?":i.pass?"✓":"✗";
+   return `<td class="${cls}">${i.value==null?"–":(c.unit==="%"?fmt("pct",i.value):i.value)} ${mark}${i.pass===false&&i.shortfall?`<small>${i.shortfall} points short</small>`:""}</td>`}).join("")+`</tr>`)}
+ rows.push(grpRow("Result"));
+ rows.push(`<tr><td class="attr"><b>Quality gate met</b><small>thresholds: line coverage ${g0.thresholds.lineCoverage} %, adjusted mutation score ${g0.thresholds.mutationScore} %</small></td>`+R.map(r=>{const g=r.gate;if(!g)return `<td class="miss">–</td>`;return `<td class="${g.met===true?"best":g.met===false?"warnc":"miss"}"><b>${g.met===true?"yes":g.met===false?"no":"?"}</b>${g.appliedLater?`<small>applied afterwards</small>`:""}${g.unknown?`<small>${g.unknown} not assessable</small>`:""}</td>`}).join("")+"</tr>");
+ table("gate","Criterion",rows,{attrW:300})}
+
+// --- setups (computed for all runs of the report; the toolbar does not change them)
+(function(){const S=D.setups||[];if(ALL.length<2||!S.length)return;$("secSetups").hidden=false;
+ const mets=["costToGate","costExcl","agentMin","toolCalls","modelCalls","avgContext","blocking","fixLoops","mutationRounds","testsAfterFirstMutation","finalTests","unitTests","e2eTests","mutAdjBackend","mutAdjFrontend","covBackend","covFrontend","gateOvershoot","commitCount","commitPctOversize"].map(id=>C.find(m=>m.id===id)).filter(Boolean);
+ const el=$("setups");el.style.minWidth=(260+S.length*130)+"px";
+ let t=`<colgroup><col style="width:260px">${S.map(()=>"<col>").join("")}</colgroup><thead><tr><th class="fh">Attribute</th>${S.map(s=>`<th><span class="rn">template ${esc(s.template)}</span><span class="rt">${s.n} run${s.n>1?"s":""}${s.operators.length?" · "+esc(s.operators.join(", ")):""} · ${s.gatePassing} met the gate</span></th>`).join("")}</tr></thead><tbody>`;
+ for(const m of mets){if(!S.some(s=>s.stats[m.id]))continue;
+  t+=`<tr><td class="attr"><span class="dir">${arrow[m.dir]}</span><b>${m.label}</b></td>`+S.map((s,j)=>{const x=s.stats[m.id];if(!x)return `<td class="miss">–</td>`;
+   const prev=j>0?S[j-1].stats[m.id]:null;let g="";
+   if(prev&&x.n>1&&prev.n>1){if(x.max<prev.min)g=` <span title="entirely below the range of the previous setup: a real difference">▼</span>`;else if(x.min>prev.max)g=` <span title="entirely above the range of the previous setup: a real difference">▲</span>`}
+   return `<td>${fmt(m.unit,x.median)}${x.n>1?`<small>${fmt(m.unit,x.min)} to ${fmt(m.unit,x.max)}</small>`:""}${g}</td>`}).join("")+"</tr>"}
+ el.innerHTML=t+"</tbody>";
+ const diffs=S.flatMap(s=>s.envDiffs.map(d=>s.template+": "+d.key+" ("+d.values.map(v=>v.label+" = "+v.value).join("; ")+")"));
+ $("setupsNote").innerHTML="Median over the runs of a setup, with the range below it. A difference between two setups counts only where ▼ or ▲ appears: the two ranges do not overlap (needs at least two runs in each). With one run per setup nothing can be called a real difference; single runs differ by about 12 to 15 % in cost and time."+(diffs.length?"<br><b>The environment differed between runs of one setup:</b> "+esc(diffs.join(" | "))+".":"");
+})();
+
+// --- svg helpers
+const svg=(w,hh,b)=>`<svg viewBox="0 0 ${w} ${hh}" role="img"><defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--surface)"/><rect width="2.2" height="5" fill="var(--k-rebuild)"/></pattern></defs>${b}</svg>`;
+const niceMax=v=>{v=v||1;const p=Math.pow(10,Math.floor(Math.log10(v)));const m=v/p;return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p};
+const none=(id)=>{$(id).innerHTML=`<div class="empty">No run to show.</div>`};
+
+function chTime(){if(!R.length)return none("chTime");const W=560,L=leftM(R),Rm=90,T=8,bh=24,gap=12,H=T+R.length*(bh+gap)+24;const mx=niceMax(maxOf(R.map(r=>val(r,"agentMin").v),1));
+ const x=v=>L+(W-L-Rm)*v/mx;let b="";
+ for(let t=0;t<=mx+1e-9;t+=mx/4)b+=`<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${T}" y2="${H-20}"/><text x="${x(t)}" y="${H-5}" text-anchor="middle">${Math.round(t)}</text>`;
+ R.forEach((r,i)=>{const y=T+i*(bh+gap),a=val(r,"agentMin").v||0,mo=val(r,"modelMin").v,to=val(r,"toolMin").v;
+  b+=lab(r,L-8,y+bh/2+4);
+  const segs=mo!=null&&to!=null?[[mo,"var(--k-model)"],[to,"var(--k-tool)"],[Math.max(0,a-mo-to),"var(--k-other)"]]:[[a,"var(--k-other)"]];
+  let c=0;segs.forEach(([v,cl])=>{if(v<=0)return;b+=`<rect x="${x(c)}" y="${y}" width="${Math.max(0,x(c+v)-x(c)-1)}" height="${bh}" fill="${cl}"/>`;
+   if(x(c+v)-x(c)>26)b+=`<text x="${(x(c)+x(c+v))/2}" y="${y+bh/2+4}" text-anchor="middle" style="fill:#fff;font-weight:600">${Math.round(v)}</text>`;c+=v});
+  b+=`<text class="val" x="${x(a)+6}" y="${y+bh/2+4}">${Math.round(a)}</text>`});
+ $("chTime").innerHTML=svg(W,H,b)}
+
+// cost stacked (token parts priced at the list prices of the report: input 4, output 20, cache read 0.2, cache write 8 per MTok)
+function chCost(){const rs=R.filter(r=>r.tokens&&val(r,"costLogged").v!=null);if(!rs.length)return none("chCost");
+ const W=560,L=leftM(rs),Rm=110,T=8,bh=24,gap=12,H=T+rs.length*(bh+gap)+24;
+ const mx=niceMax(maxOf(rs.map(r=>val(r,"costLogged").v),1));const x=v=>L+(W-L-Rm)*v/mx;let b="";
+ for(let t=0;t<=mx+1e-9;t+=mx/4)b+=`<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${T}" y2="${H-20}"/><text x="${x(t)}" y="${H-5}" text-anchor="middle">$${Math.round(t)}</text>`;
+ rs.forEach((r,i)=>{const y=T+i*(bh+gap),t=r.tokens,logged=val(r,"costLogged").v,excl=val(r,"costExcl").v,rebuild=Math.max(0,logged-excl);
+  let cr=(t.cr||0)*0.2/1e6,cw=(t.cw||0)*8/1e6,out=(t.out||0)*20/1e6,inp=(t.inp||0)*4/1e6;
+  const sum=cr+cw+out+inp,k=sum?logged/sum:1;cr*=k;cw*=k;out*=k;inp*=k;
+  cw=Math.max(0,cw-rebuild);
+  b+=lab(r,L-8,y+bh/2+4);
+  let c=0;[[cr,"var(--k-cr)"],[cw,"var(--k-cw)"],[out+inp,"var(--k-out)"],[rebuild,"url(#hatch)"]].forEach(([v,cl])=>{if(v<=0)return;b+=`<rect x="${x(c)}" y="${y}" width="${Math.max(0,x(c+v)-x(c)-1)}" height="${bh}" fill="${cl}"${cl[0]==="u"?' stroke="var(--k-rebuild)"':""}/>`;
+   if(x(c+v)-x(c)>30)b+=`<text x="${(x(c)+x(c+v))/2}" y="${y+bh/2+4}" text-anchor="middle" style="fill:#fff;font-weight:600">${v.toFixed(1)}</text>`;c+=v});
+  b+=`<text class="val" x="${x(c)+6}" y="${y+bh/2+4}">$${excl.toFixed(2)}${rebuild>0.05?" (+"+rebuild.toFixed(1)+")":""}</text>`});
+ $("chCost").innerHTML=svg(W,H,b)}
+
+// scatter; labels are pushed apart so they never overlap each other or the axis
+function chScatter(){const rs=R.filter(r=>val(r,"costExcl").v!=null&&val(r,"agentMin").v!=null);if(!rs.length)return none("chScatter");const W=560,H=300,L=46,Rm=16,T=14,B=38;
+ const mxX=niceMax(maxOf(rs.map(r=>val(r,"agentMin").v),1)*1.08),mxY=niceMax(maxOf(rs.map(r=>val(r,"costExcl").v),1)*1.08);
+ const x=v=>L+(W-L-Rm)*v/mxX,y=v=>T+(H-T-B)*(1-v/mxY);let b="";
+ for(let t=0;t<=mxY+1e-9;t+=mxY/4)b+=`<line class="grid" x1="${L}" x2="${W-Rm}" y1="${y(t)}" y2="${y(t)}"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end">$${Math.round(t)}</text>`;
+ for(let t=0;t<=mxX+1e-9;t+=mxX/4)b+=`<text x="${x(t)}" y="${H-18}" text-anchor="middle">${Math.round(t)}</text>`;
+ b+=`<text x="${(L+W-Rm)/2}" y="${H-3}" text-anchor="middle">agent minutes</text>`;
+ const placed=[];let dots="",labels="";
+ rs.slice().sort((p,q)=>val(p,"agentMin").v-val(q,"agentMin").v).forEach(r=>{const cx=x(val(r,"agentMin").v),cy=y(val(r,"costExcl").v);const ok=val(r,"gateMet").v!==0;
+  dots+=`<circle cx="${cx}" cy="${cy}" r="6" fill="${ok?col(r)+"":"var(--surface)"}" stroke="${col(r)}" stroke-width="2"><title>${ok?"":"below the quality gate, not comparable: "}${esc(r.label)}: ${fmt("min",val(r,"agentMin").v)} min, ${fmt("usd",val(r,"costExcl").v)}</title></circle>`;
+  const text=sl(r.label,26),w=text.length*6.4,right=cx>(W-L)*0.6+L,lx=right?cx-10:cx+10,x0=right?lx-w:lx,x1=right?lx:lx+w;let ly=cy+4;
+  for(let k=0;k<12&&placed.some(p=>x0<p.x1&&x1>p.x0&&Math.abs(p.y-ly)<14);k++)ly+=14;
+  ly=Math.min(ly,H-B+2);placed.push({x0,x1,y:ly});
+  labels+=`<text x="${lx}" y="${ly}" text-anchor="${right?"end":"start"}"><title>${esc(r.label)}</title>${esc(text)}</text>`});
+ $("chScatter").innerHTML=svg(W,H,b+dots+labels)}
+
+function groupedBars(id,rs,series,max,fmtv,lines){if(!rs.length)return none(id);
+ const W=560,L=leftM(rs),Rm=52,T=18,bh=11,gap=3,gg=16,sh=series.length*(bh+gap),gh=sh+gg,H=T+rs.length*gh+6,x=v=>L+(W-L-Rm)*v/max;let b="";
+ for(let k=0;k<=4;k++){const v=max*k/4;b+=`<line class="grid" x1="${x(v)}" x2="${x(v)}" y1="${T}" y2="${H-6}"/><text x="${x(v)}" y="${T-6}" text-anchor="middle">${Math.round(v)}</text>`}
+ (lines||[]).forEach(l=>b+=`<line x1="${x(l)}" x2="${x(l)}" y1="${T}" y2="${H-6}" stroke="var(--warn)" stroke-dasharray="4 3" stroke-width="1.5"/>`);
+ rs.forEach((r,i)=>{const y0=T+4+i*gh;b+=lab(r,L-8,y0+sh/2+3);
+  series.forEach((s,j)=>{const v=s.get(r),y=y0+j*(bh+gap);
+   if(v==null){b+=`<text x="${L+4}" y="${y+bh-1}" style="font-size:10.5px">–</text>`;return}
+   b+=`<rect x="${L}" y="${y}" width="${Math.max(1,x(v)-L)}" height="${bh}" fill="${s.color}"><title>${esc(r.label)}: ${esc(s.name)} ${fmtv(v)}</title></rect><text class="val" x="${x(v)+4}" y="${y+bh-1}" style="font-size:10.5px">${fmtv(v)}</text>`})});
+ $(id).innerHTML=svg(W,H,b)}
+function chQual(){const g=id=>r=>{const v=val(r,id).v;return v==null?null:v};
+ groupedBars("chQual",R,[{name:"Backend line coverage",color:"var(--q-1)",get:g("covBackend")},{name:"Frontend line coverage",color:"var(--q-2)",get:g("covFrontend")},{name:"Backend mutation (adjusted)",color:"var(--q-3)",get:g("mutAdjBackend")},{name:"Frontend mutation (adjusted)",color:"var(--q-4)",get:g("mutAdjFrontend")}],100,v=>(Math.round(v*10)/10)+"",[90,95])}
+function chWork(){const g=id=>r=>{const v=val(r,id).v;return v==null?null:v};const mx=niceMax(maxOf(R.flatMap(r=>["modelCalls","toolCalls","finalTests","commitCount"].map(i=>val(r,i).v)),1));
+ groupedBars("chWork",R,[{name:"Model calls",color:"var(--q-1)",get:g("modelCalls")},{name:"Tool calls",color:"var(--q-2)",get:g("toolCalls")},{name:"Tests at the end",color:"var(--q-3)",get:g("finalTests")},{name:"Commits",color:"var(--q-4)",get:g("commitCount")}],mx,v=>Math.round(v)+"")}
+function chCtx(){const rs=R.filter(r=>r.phases.some(p=>p.avgContextK!=null));$("lgRuns").innerHTML=rs.map(r=>`<span title="${esc(r.label)}"><i style="background:${col(r)}"></i>${esc(sl(r.label,40))}</span>`).join("");
+ if(!rs.length)return none("chCtx");
+ const W=560,H=250,L=40,Rm=14,T=10,B=28,mx=600;const x=i=>L+(W-L-Rm)*i/7,y=v=>T+(H-T-B)*(1-Math.min(v,mx)/mx);let b="";
+ [0,150,300,450,600].forEach(t=>b+=`<line class="grid" x1="${L}" x2="${W-Rm}" y1="${y(t)}" y2="${y(t)}"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end">${t}</text>`);
+ for(let i=0;i<8;i++)b+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">P${i}</text>`;
+ b+=`<line x1="${L}" x2="${W-Rm}" y1="${y(150)}" y2="${y(150)}" stroke="var(--warn)" stroke-dasharray="4 4"/>`;
+ rs.forEach((r,j)=>{const pts=r.phases.filter(p=>p.avgContextK!=null);b+=`<polyline points="${pts.map(p=>x(p.phase)+","+y(p.avgContextK)).join(" ")}" fill="none" stroke="${col(r)}" stroke-width="2" ${j%2?'stroke-dasharray="5 3"':''}/>`;
+  pts.forEach(p=>b+=`<circle cx="${x(p.phase)}" cy="${y(p.avgContextK)}" r="2.5" fill="${col(r)}"><title>${esc(r.label)} P${p.phase}: ${p.avgContextK}k</title></circle>`)});
+ $("chCtx").innerHTML=svg(W,H,b)}
+
+function phaseTable(){const names=["0 Preflight","1 Requirements","2 Design","3 Test design","4 Build","5 Unit tests","6 Verify","7 Release"];
+ const mx=maxOf(R.flatMap(r=>r.phases.map(p=>p.agentMin||0)),1);const rows=[];
+ names.forEach((n,i)=>{const overhead=[0,1,2,7].includes(i);rows.push(`<tr><td>${n}${overhead?' <span class="tag">overhead</span>':""}</td>${R.map(r=>{const p=r.phases.find(q=>q.phase===i);return p?`<td>${Math.round(p.agentMin)}<span class="bar2" style="width:${Math.round(40*p.agentMin/mx)}px;background:var(--vline)"></span></td>`:"<td class=\"miss\">–</td>"}).join("")}</tr>`)});
+ rows.push(`<tr><td><b>Agent time</b></td>${R.map(r=>`<td><b>${val(r,"agentMin").v==null?"–":Math.round(val(r,"agentMin").v)}</b></td>`).join("")}</tr>`);
+ table("phases","Phase",rows,{attrW:260})}
+
+// commits (single run)
+function commitsView(){const r=R[0],cs=r&&r.commits;if(!D.single||!cs||!cs.length)return;$("secCommits").hidden=false;
+ const W=1040,H=230,L=40,Rm=8,T=14,B=26,mx=Math.max(450,niceMax(Math.min(1200,Math.max(...cs.map(c=>c.lines)))));const y=v=>T+(H-T-B)*(1-Math.min(v,mx)/mx),bw=(W-L-Rm)/cs.length;let b="";
+ [0,mx/4,mx/2,mx*3/4,mx].forEach(t=>b+=`<line class="grid" x1="${L}" x2="${W-Rm}" y1="${y(t)}" y2="${y(t)}"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end">${Math.round(t)}</text>`);
+ b+=`<line x1="${L}" x2="${W-Rm}" y1="${y(400)}" y2="${y(400)}" stroke="var(--warn)" stroke-dasharray="5 4"/>`;
+ cs.forEach((c,i)=>{const x=L+i*bw,cl=c.oversize?"var(--warn)":c.mixed?"var(--k-mixed)":"var(--k-model)";
+  b+=`<rect x="${x+0.5}" y="${y(c.lines)}" width="${Math.max(1,bw-1.5)}" height="${y(0)-y(c.lines)}" fill="${cl}"><title>${esc(c.hash+" "+c.subject)} | ${c.lines} lines, ${c.files} files | $${c.costUsdSincePrev} | ${c.activeMinutesSincePrev} min since previous</title></rect>`});
+ $("chCommits").innerHTML=svg(W,H,b);
+ const flags=c=>[c.oversize?"over guide":"",c.mixed?"mixed":"",c.burst?"burst":"",c.messageOk?"":"message"].filter(Boolean).join(", ")||"–";
+ const w=[44,90,64,220,60,70,120,110,150,300];
+ $("commitTable").style.minWidth=w.reduce((a,b)=>a+b,0)+"px";
+ $("commitTable").innerHTML=`<colgroup>${w.map((x,i)=>i===w.length-1?"<col>":`<col style="width:${x}px">`).join("")}</colgroup><thead><tr>${["#","Commit","Phase","Concerns (changed lines)","Files","Lines","Minutes since previous","Cost since previous","Flags","Subject"].map(h=>`<th class="fh">${h}</th>`).join("")}</tr></thead><tbody>`+cs.map((c,i)=>`<tr><td>${i+1}</td><td><code>${c.hash}</code></td><td>${c.phase??"–"}</td><td>${esc(Object.entries(c.categories).map(([k,v])=>k+" "+v).join(", ")||"–")}</td><td>${c.files}</td><td>${c.lines}</td><td>${c.activeMinutesSincePrev}</td><td>$${c.costUsdSincePrev.toFixed(2)}</td><td>${flags(c)}</td><td>${esc(c.subject)}</td></tr>`).join("")+"</tbody>"}
+
+// --- environment
+const envv=(r,f)=>{try{const v=f(r.environment||{});return v==null||v===""||(Array.isArray(v)&&!v.length)?null:(Array.isArray(v)?v.join(", "):String(v))}catch(e){return null}};
+const lc=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+// names that identify an operator: the series of the runs and every declared operator
+const known=[...new Set([...ALL.map(r=>lc(r.series)),...ALL.map(r=>lc(r.environment&&r.environment.operator))].filter(n=>n.length>2))];
+const account=r=>{const e=r.environment||{};if(e.host&&e.host.account)return e.host.account;const d=(e.workingDirs||[])[0]||"";const m=d.match(/^\/home\/([^/]+)/)||d.match(/^\/Users\/([^/]+)/)||d.match(/^[A-Za-z]:[\\/]+Users[\\/]+([^\\/]+)/i);return m?m[1]:null};
+const sessionOs=r=>{const e=r.environment||{};const d=(e.workingDirs||[])[0];if(e.os&&e.os.platform)return e.os.platform;return d?(/^[A-Za-z]:[\\/]/.test(d)?"win32":/^\/Users\//.test(d)?"darwin":"linux"):null};
+function operatorMismatch(r){const e=r.environment||{},acc=lc(account(r)),op=lc(e.operator);if(!acc||!op)return null;if(acc.includes(op))return null;
+ const other=known.find(n=>n!==op&&acc.includes(n));return other?`declared operator "${e.operator}", but the session ran under the account "${account(r)}", which matches "${other}"`:null}
+function permMismatch(r){const e=r.environment||{};if(!e.permissionMode||!(e.permissionModes||[]).length)return null;return e.permissionModes.includes(e.permissionMode)&&e.permissionModes.length===1?null:`declared "${e.permissionMode}", the session used: ${e.permissionModes.join(", ")}`}
+function hostMismatch(r){const e=r.environment||{};const a=e.os&&e.os.platform,b=e.postRunHost&&e.postRunHost.platform;return a&&b&&a!==b?`the run was on ${a}, the report was measured on ${b}`:null}
+function envTables(){
+ const dec=[["Operator",r=>{const m=operatorMismatch(r);return {t:envv(r,e=>e.operator),cls:m?"warnc":"",title:m||""}}],["Machine",r=>envv(r,e=>e.machine)],["Plan",r=>envv(r,e=>e.plan)],["Permission mode",r=>{const m=permMismatch(r);return {t:envv(r,e=>e.permissionMode),cls:m?"warnc":"",title:m||""}}],["Template version",r=>r.template]];
+ table("envDecl","Declared",dec.map(([n,f])=>textRow(n,f)),{attrW:260});
+ const ses=[["Harness",r=>envv(r,e=>e.harness&&(e.harness.name+" "+(e.harness.versions||[]).join(", ")))],["Entry point",r=>envv(r,e=>e.harness&&e.harness.entrypoints)],["Models",r=>envv(r,e=>e.models)],["Effort",r=>envv(r,e=>e.effort)],["Permission modes seen in the session",r=>{const m=permMismatch(r);return {t:envv(r,e=>e.permissionModes),cls:m?"warnc":"",title:m||""}}],["Git branch seen in the session",r=>envv(r,e=>e.gitBranches)]];
+ table("envSession","Session",ses.map(([n,f])=>textRow(n,f)),{attrW:260});
+ const mac=[["Operating system at the start",r=>envv(r,e=>e.os&&(e.os.platform+" "+e.os.release+" "+e.os.arch))],["Shell",r=>envv(r,e=>e.shell)],["Node",r=>envv(r,e=>e.tools&&e.tools.node)],["Docker",r=>envv(r,e=>e.tools&&e.tools.docker)],["Java",r=>envv(r,e=>e.tools&&e.tools.java)],["Python",r=>envv(r,e=>e.tools&&e.tools.python)],["Git",r=>envv(r,e=>e.tools&&e.tools.git)],
+  ["Report measured on",r=>{const m=hostMismatch(r);return {t:envv(r,e=>e.postRunHost&&(e.postRunHost.platform+" "+e.postRunHost.release+", "+e.postRunHost.cpus+" threads, "+e.postRunHost.memoryGb+" GB")),cls:m?"warnc":"",title:m||""}}]];
+ table("envMachine","Machine and tools",mac.map(([n,f])=>textRow(n,f)),{attrW:260})}
+
+// --- trust checks
+function trustTable(){const g=(r,id)=>val(r,id).v;
+ const rows=[
+  ["Sub-agents",r=>r.subagents?(r.subagents.used?r.subagents.used+" call(s), "+r.subagents.transcripts+" transcript(s), $"+r.subagents.costUsd.toFixed(2):"none used"):"–"],
+  ["Phase timestamps from the clock tool",r=>r.phaseChecks&&(r.phaseChecks.viaHelper+r.phaseChecks.manual)?r.phaseChecks.viaHelper+" of "+(r.phaseChecks.viaHelper+r.phaseChecks.manual)+" boundaries":"–"],
+  ["Phase timestamp issues",r=>r.phaseChecks?(r.phaseChecks.issues.length?r.phaseChecks.issues.join("; "):"none"):"–"],
+  ["Idle time missing from the log",r=>g(r,"unrecordedIdleMin")==null?"–":g(r,"unrecordedIdleMin")+" min"]];
+ table("checks","Check",rows.map(([n,f])=>textRow(n,f)),{attrW:260})}
+
+// --- row-per-run tables
+const rowTable=(id,heads,widths,rows)=>{const el=$(id);el.style.minWidth=widths.reduce((a,b)=>a+b,0)+"px";
+ el.innerHTML=`<colgroup>${widths.map((w,i)=>i===widths.length-1?"<col>":`<col style="width:${w}px">`).join("")}</colgroup><thead><tr>${heads.map(h=>`<th class="fh">${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`};
+function waitsTable(){let rows=[];R.forEach(r=>{(r.longWaits||[]).forEach(x=>rows.push([r.label,Math.round(x.min)+" min",x.source,x.reason||""]))});
+ const rb=[];R.forEach(r=>(r.rebuilds||[]).filter(b=>b.causedByWait).forEach(b=>rb.push([r.label,"phase "+b.phase,Math.round(b.tokens/1000)+"k tokens","$"+b.extraCostUsd.toFixed(2)])));
+ let h=(rows.length?rows.map(r=>"<tr>"+r.map(c=>`<td>${esc(c)}</td>`).join("")+"</tr>").join(""):`<tr><td colspan="4">none</td></tr>`);
+ if(rb.length)h+=`<tr class="grp"><td colspan="4">Cache rebuilds measured in transcripts (removed from the cost shown)</td></tr>`+rb.map(r=>"<tr>"+r.map(c=>`<td>${esc(c)}</td>`).join("")+"</tr>").join("");
+ rowTable("waits",["Run","Wait over 1 hour","Found in","What it waited for"],[260,140,200,420],h)}
+function sourcesTable(){rowTable("sources",["Run","Time from","Usage from","Notes"],[240,220,220,520],R.map(r=>`<tr><td>${esc(r.label)}</td><td>${esc(r.sources.time)}</td><td>${esc(r.sources.usage)}</td><td>${[...r.flags.map(f=>`<div class="flag">${esc(f)}</div>`),...r.notes.map(n=>`<div>${esc(n)}</div>`)].join("")||"–"}</td></tr>`).join(""));
+ $("excluded").innerHTML=D.excluded.map(e=>`<li>Not included: ${esc(e)}</li>`).join("")}
+
+function render(){R=ALL.filter(r=>!off.has(r.i));chips();kpis();gateTable();groupTables();chTime();chCost();chQual();chWork();chScatter();chCtx();phaseTable();commitsView();envTables();trustTable();waitsTable();sourcesTable();
+ $("bGate").disabled=!ALL.some(r=>val(r,"gateMet").v===1)}
+render();
+</script>
+</body></html>

@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 2,
+  "runId": null,
+  "runLabel": null,
+  "model": null,
+  "effort": null,
+  "templateVersion": null,
+  "transcript": null,
+  "transcripts": [],
+  "transcriptBackup": [],
+  "startCommit": null,
+  "finalCommit": null,
+  "start": null,
+  "end": null,
+  "phases": [
+    {
+      "phase": 0,
+      "name": "preflight-and-bootstrap",
+      "start": null,
+      "end": null
+    },
+    {
+      "phase": 1,
+      "name": "requirements",
+      "start": null,
+      "end": null
+    },
+    {
+      "phase": 2,
+      "name": "design",
+      "start": null,
+      "end": null
+    },
+    {
+      "phase": 3,
+      "name": "test-design",
+      "start": null,
+      "end": null
+    },
+    {
+      "phase": 4,
+      "name": "build",
+      "start": null,
+      "end": null
+    },
+    {
+      "phase": 5,
+      "name": "unit-tests",
+      "start": null,
+      "end": null
+    },
+    {
+      "phase": 6,
+      "name": "verify",
+      "start": null,
+      "end": null
+    },
+    {
+      "phase": 7,
+      "name": "release",
+      "start": null,
+      "end": null
+    }
+  ],
+  "firstTestRun": {
+    "passed": null,
+    "failed": null,
+    "byLevel": {}
+  },
+  "finalTestRun": {
+    "passed": null,
+    "failed": null,
+    "byLevel": {}
+  },
+  "acceptanceCriteria": {
+    "total": null,
+    "frozenTests": null,
+    "frozenTestChanges": []
+  },
+  "findings": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "openAtEnd": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0
+  },
+  "fixLoops": [],
+  "decisions": [],
+  "humanInterventions": [],
+  "divergences": [],
+  "codeMetrics": {
+    "components": [],
+    "complexity": null,
+    "duplicationPct": null,
+    "gate": {
+      "thresholds": { "lineCoverage": null, "mutationScore": null },
+      "perComponent": {},
+      "mutationRounds": {},
+      "testsAtFirstMutation": {},
+      "met": null
+    }
+  },
+  "commits": [],
+  "commitSummary": null,
+  "time": {
+    "wallMin": null,
+    "agentMin": null,
+    "humanWaitMin": null,
+    "betweenPhasesMin": null,
+    "modelMin": null,
+    "toolMin": null,
+    "humanReplyMin": null,
+    "waitsOver60Min": null,
+    "byPhase": [],
+    "idleGaps": [],
+    "longWaits": [],
+    "unrecordedIdleMin": null,
+    "phaseChecks": null
+  },
+  "usage": {
+    "inputTokens": null,
+    "outputTokens": null,
+    "thinkingTokens": null,
+    "cacheReadTokens": null,
+    "cacheWriteTokens": null,
+    "modelCalls": null,
+    "toolCalls": {
+      "total": null,
+      "errors": null,
+      "byTool": {}
+    },
+    "costUsd": null,
+    "costUsdExclWaits": null,
+    "priceTableDate": null,
+    "unpricedModels": [],
+    "models": {},
+    "cacheRebuilds": [],
+    "byPhase": [],
+    "context": {
+      "peakTokens": null,
+      "avgTokens": null,
+      "pctCallsOver150k": null
+    },
+    "toolTimeByCategory": {},
+    "subagents": {
+      "used": null,
+      "transcripts": null,
+      "modelCalls": null,
+      "costUsd": null,
+      "outputTokens": null
+    }
+  },
+  "environment": {
+    "operator": null,
+    "machine": null,
+    "plan": null,
+    "permissionMode": null,
+    "os": null,
+    "shell": null,
+    "timezone": null,
+    "utcOffsetMin": null,
+    "tools": {},
+    "harness": null,
+    "models": [],
+    "effort": [],
+    "permissionModes": [],
+    "host": null,
+    "workingDirs": [],
+    "postRunHost": null,
+    "capturedAt": null
+  },
+  "measuredAt": null
+}

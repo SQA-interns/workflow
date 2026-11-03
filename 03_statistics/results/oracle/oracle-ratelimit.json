@@ -1,0 +1,14 @@
+{
+  "phase": "ratelimit",
+  "feature": "none",
+  "features": [],
+  "featurePrefixes": {},
+  "tag": "ejoiam",
+  "base_url": "http://127.0.0.1:8081",
+  "results": {
+    "R32": {
+      "result": "fail",
+      "detail": "statuses [200, 200, 429, 429] (expected 200, 200, 200, 429)"
+    }
+  }
+}

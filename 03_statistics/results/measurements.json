@@ -1,0 +1,868 @@
+{
+  "generatedAt": "2026-11-03T10:20:13.484Z",
+  "runId": "tjan-single-agent-matt-workflow-contacts-run-1-opus-5-5-20261102T1947Z-be2f",
+  "time": {
+    "wallMin": 231.3,
+    "agentMin": 87,
+    "humanWaitMin": 144.3,
+    "betweenPhasesMin": 0,
+    "modelMin": 60.1,
+    "toolMin": 35.2,
+    "humanReplyMin": 6.3,
+    "waitsOver60Min": 1,
+    "byPhase": [
+      {
+        "phase": 0,
+        "name": "preflight-and-bootstrap",
+        "wallMin": 4.6,
+        "waitMin": 1.6,
+        "agentMin": 3,
+        "modelMin": 2.2,
+        "toolMin": 0.8
+      },
+      {
+        "phase": 4,
+        "name": "build",
+        "wallMin": 48.2,
+        "waitMin": 0,
+        "agentMin": 48.2,
+        "modelMin": 31.9,
+        "toolMin": 16.3
+      },
+      {
+        "phase": 6,
+        "name": "verify",
+        "wallMin": 178.5,
+        "waitMin": 142.7,
+        "agentMin": 35.8,
+        "modelMin": 26,
+        "toolMin": 18.1
+      }
+    ],
+    "idleGaps": [
+      {
+        "start": "2026-11-02T20:44:59.600Z",
+        "end": "2026-11-02T21:00:17.575Z",
+        "min": 15.3,
+        "phase": 6
+      },
+      {
+        "start": "2026-11-02T21:04:11.823Z",
+        "end": "2026-11-02T21:14:40.261Z",
+        "min": 10.5,
+        "phase": 6
+      },
+      {
+        "start": "2026-11-02T21:16:39.144Z",
+        "end": "2026-11-02T21:30:14.199Z",
+        "min": 13.6,
+        "phase": 6
+      },
+      {
+        "start": "2026-11-02T21:36:34.317Z",
+        "end": "2026-11-02T21:56:19.197Z",
+        "min": 19.7,
+        "phase": 6
+      },
+      {
+        "start": "2026-11-02T22:06:28.168Z",
+        "end": "2026-11-02T22:30:57.136Z",
+        "min": 24.5,
+        "phase": 6
+      },
+      {
+        "start": "2026-11-02T22:39:59.430Z",
+        "end": "2026-11-02T22:49:59.849Z",
+        "min": 10,
+        "phase": 6
+      },
+      {
+        "start": "2026-11-02T22:59:54.569Z",
+        "end": "2026-11-02T23:17:26.762Z",
+        "min": 17.5,
+        "phase": 6
+      },
+      {
+        "start": "2026-11-02T23:18:11.085Z",
+        "end": "2026-11-02T23:37:18.821Z",
+        "min": 19.1,
+        "phase": 6
+      }
+    ],
+    "longWaits": [
+      {
+        "start": "2026-11-02T20:44:45.000Z",
+        "min": 71.6,
+        "source": "run-log",
+        "cause": "other",
+        "reason": "Post-run operator turns between dead015 and the follow-up request (push, questions about the tickets, closing #2-#14, setting up these statistics and the oracle run); not implementation work, so excluded from agent time"
+      }
+    ],
+    "unrecordedIdleMin": 71.1,
+    "phaseChecks": {
+      "viaHelper": 0,
+      "manual": 6,
+      "issues": [
+        "some phases have no start or end"
+      ],
+      "boundaries": [
+        {
+          "phase": 0,
+          "which": "start",
+          "time": "2026-11-02T19:48:16Z",
+          "via": "manual"
+        },
+        {
+          "phase": 0,
+          "which": "end",
+          "time": "2026-11-02T19:52:51Z",
+          "via": "manual"
+        },
+        {
+          "phase": 4,
+          "which": "start",
+          "time": "2026-11-02T19:52:51Z",
+          "via": "manual"
+        },
+        {
+          "phase": 4,
+          "which": "end",
+          "time": "2026-11-02T20:41:02Z",
+          "via": "manual"
+        },
+        {
+          "phase": 6,
+          "which": "start",
+          "time": "2026-11-02T20:41:02Z",
+          "via": "manual"
+        },
+        {
+          "phase": 6,
+          "which": "end",
+          "time": "2026-11-02T23:39:31Z",
+          "via": "manual"
+        }
+      ]
+    }
+  },
+  "usage": {
+    "inputTokens": 588,
+    "outputTokens": 441165,
+    "thinkingTokens": 75047,
+    "cacheReadTokens": 88700569,
+    "cacheWriteTokens": 793911,
+    "modelCalls": 280,
+    "toolCalls": {
+      "total": 274,
+      "errors": 9,
+      "byTool": {
+        "Bash": 257,
+        "Read": 3,
+        "Skill": 2,
+        "Write": 7,
+        "Agent": 2,
+        "AskUserQuestion": 1,
+        "SubagentHandback": 2
+      }
+    },
+    "costUsd": 32.36,
+    "costUsdExclWaits": 32.36,
+    "priceTableDate": null,
+    "unpricedModels": [],
+    "models": {
+      "claude-opus-5-5": {
+        "calls": 280,
+        "inputTokens": 588,
+        "outputTokens": 441165,
+        "thinkingTokens": 75047,
+        "cacheReadTokens": 88700569,
+        "cacheWriteTokens": 793911,
+        "costUsd": 32.36
+      }
+    },
+    "subagents": {
+      "used": 2,
+      "transcripts": 2,
+      "modelCalls": 31,
+      "costUsd": 1.68,
+      "outputTokens": 17191
+    },
+    "cacheRebuilds": [],
+    "byPhase": [
+      {
+        "phase": 0,
+        "calls": 18,
+        "outputTokens": 13135,
+        "cacheReadTokens": 1087732,
+        "cacheWriteTokens": 53920,
+        "costUsd": 0.91,
+        "avgContextTokens": 63427,
+        "startContextTokens": 39191
+      },
+      {
+        "phase": 4,
+        "calls": 108,
+        "outputTokens": 250778,
+        "cacheReadTokens": 25121426,
+        "cacheWriteTokens": 274602,
+        "costUsd": 12.24,
+        "avgContextTokens": 235150,
+        "startContextTokens": 82731
+      },
+      {
+        "phase": 6,
+        "calls": 154,
+        "outputTokens": 177252,
+        "cacheReadTokens": 62491411,
+        "cacheWriteTokens": 465389,
+        "costUsd": 19.21,
+        "avgContextTokens": 493576,
+        "startContextTokens": 357198
+      }
+    ],
+    "context": {
+      "peakTokens": 640613,
+      "avgTokens": 350393,
+      "pctCallsOver150k": 83.1,
+      "costPctOver150k": 89
+    },
+    "toolTimeByCategory": {
+      "git": {
+        "calls": 22,
+        "minutes": 0.3
+      },
+      "Shell and file inspection": {
+        "calls": 48,
+        "minutes": 0.4
+      },
+      "Backend build and test": {
+        "calls": 18,
+        "minutes": 4.5
+      },
+      "Docker build/run": {
+        "calls": 14,
+        "minutes": 4
+      },
+      "End-to-end tests": {
+        "calls": 34,
+        "minutes": 10.3
+      },
+      "curl/sleep": {
+        "calls": 2,
+        "minutes": 0
+      },
+      "Mutation testing": {
+        "calls": 56,
+        "minutes": 21.4
+      },
+      "Frontend build and test": {
+        "calls": 33,
+        "minutes": 5.6
+      },
+      "Other analysis tools": {
+        "calls": 1,
+        "minutes": 0.1
+      }
+    }
+  },
+  "environment": {
+    "operator": "tjan",
+    "machine": "tjan-linux",
+    "plan": null,
+    "permissionMode": "auto",
+    "os": {
+      "platform": "linux",
+      "release": "7.0.0-38-generic",
+      "arch": "x64"
+    },
+    "shell": "/usr/bin/zsh",
+    "timezone": "Europe/Ljubljana",
+    "utcOffsetMin": 60,
+    "tools": {
+      "node": "v18.19.1",
+      "npm": "9.2.0",
+      "git": "git version 2.43.0",
+      "docker": "Docker version 29.5.0, build 98f1464",
+      "java": "openjdk version \"21.0.12.1\" 2026-08-18",
+      "maven": null,
+      "python": "Python 3.12.3"
+    },
+    "capturedAt": "2026-11-03T10:20:13.417Z",
+    "host": {
+      "hostname": "tk",
+      "account": "tjan-kazar",
+      "cpuModel": "Intel(R) Core(TM) i5-9300H CPU @ 2.40GHz",
+      "cpus": 8,
+      "memoryGb": 31,
+      "workingDir": "/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow"
+    },
+    "harness": {
+      "name": "claude-code",
+      "versions": [
+        "2.1.316"
+      ],
+      "entrypoints": [
+        "cli"
+      ]
+    },
+    "models": [
+      "claude-opus-5-5"
+    ],
+    "effort": [
+      "medium"
+    ],
+    "perTurnEffort": [
+      "medium"
+    ],
+    "advisorModels": [
+      "claude-opus-5-5"
+    ],
+    "permissionModes": [
+      "auto"
+    ],
+    "gitBranches": [
+      "main"
+    ],
+    "workingDirs": [
+      "/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow",
+      "/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow/backend",
+      "/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow/backend/src/test/java/si/contacts/support",
+      "/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow/backend/src/test/java/si/contacts/acceptance",
+      "/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow/backend/src/main/java/si/contacts/web"
+    ],
+    "userTypes": [
+      "external"
+    ],
+    "permissionDecisions": {
+      "total": 273,
+      "byHuman": 1,
+      "rejected": 2
+    },
+    "postRunHost": {
+      "platform": "linux",
+      "release": "7.0.0-38-generic",
+      "arch": "x64",
+      "cpus": 8,
+      "memoryGb": 31,
+      "nodeVersion": "v18.19.1",
+      "timezone": "Europe/Ljubljana"
+    }
+  },
+  "commits": [
+    {
+      "hash": "d13ae39",
+      "time": "2026-11-02T20:52:51+01:00",
+      "phase": 4,
+      "subject": "Add agent docs, glossary and ADR as received",
+      "type": null,
+      "files": 6,
+      "lines": 234,
+      "linesAll": 234,
+      "categories": {
+        "docs": 234
+      },
+      "mixed": false,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 4.6,
+      "activeMinutesSincePrev": 3,
+      "modelCalls": 18,
+      "outputTokens": 13135,
+      "costUsdSincePrev": 0.91
+    },
+    {
+      "hash": "0db3dd2",
+      "time": "2026-11-02T21:08:15+01:00",
+      "phase": 4,
+      "subject": "Walking skeleton, Members and Roles (#2, #3)",
+      "type": null,
+      "files": 93,
+      "lines": 4647,
+      "linesAll": 8799,
+      "categories": {
+        "docs": 276,
+        "code": 2618,
+        "build": 710,
+        "test": 1043
+      },
+      "mixed": true,
+      "oversize": true,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 15.4,
+      "activeMinutesSincePrev": 15.4,
+      "modelCalls": 33,
+      "outputTokens": 93044,
+      "costUsdSincePrev": 3.52
+    },
+    {
+      "hash": "8661851",
+      "time": "2026-11-02T21:14:19+01:00",
+      "phase": 4,
+      "subject": "Contacts with Predefined fields, Revisions and version checks (#4)",
+      "type": null,
+      "files": 24,
+      "lines": 1939,
+      "linesAll": 1939,
+      "categories": {
+        "code": 1676,
+        "test": 263
+      },
+      "mixed": true,
+      "oversize": true,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 6.1,
+      "activeMinutesSincePrev": 6.1,
+      "modelCalls": 11,
+      "outputTokens": 42590,
+      "costUsdSincePrev": 1.65
+    },
+    {
+      "hash": "5a0042c",
+      "time": "2026-11-02T21:15:26+01:00",
+      "phase": 4,
+      "subject": "Attributes on Contacts (#5)",
+      "type": null,
+      "files": 2,
+      "lines": 157,
+      "linesAll": 157,
+      "categories": {
+        "test": 157
+      },
+      "mixed": false,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 1.1,
+      "activeMinutesSincePrev": 1.1,
+      "modelCalls": 3,
+      "outputTokens": 4677,
+      "costUsdSincePrev": 0.26
+    },
+    {
+      "hash": "bf0e678",
+      "time": "2026-11-02T21:19:21+01:00",
+      "phase": 4,
+      "subject": "Tags (#6)",
+      "type": null,
+      "files": 10,
+      "lines": 616,
+      "linesAll": 616,
+      "categories": {
+        "code": 285,
+        "test": 331
+      },
+      "mixed": true,
+      "oversize": true,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 3.9,
+      "activeMinutesSincePrev": 3.9,
+      "modelCalls": 12,
+      "outputTokens": 17875,
+      "costUsdSincePrev": 1.12
+    },
+    {
+      "hash": "61924ee",
+      "time": "2026-11-02T21:21:30+01:00",
+      "phase": 4,
+      "subject": "Search, filter, sort and paging (#7)",
+      "type": null,
+      "files": 5,
+      "lines": 505,
+      "linesAll": 505,
+      "categories": {
+        "test": 221,
+        "code": 284
+      },
+      "mixed": true,
+      "oversize": true,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 2.2,
+      "activeMinutesSincePrev": 2.2,
+      "modelCalls": 6,
+      "outputTokens": 12276,
+      "costUsdSincePrev": 0.66
+    },
+    {
+      "hash": "294d083",
+      "time": "2026-11-02T21:24:13+01:00",
+      "phase": 4,
+      "subject": "Revision history and Restore (#8)",
+      "type": null,
+      "files": 6,
+      "lines": 397,
+      "linesAll": 397,
+      "categories": {
+        "test": 245,
+        "code": 152
+      },
+      "mixed": true,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 2.7,
+      "activeMinutesSincePrev": 2.7,
+      "modelCalls": 6,
+      "outputTokens": 11764,
+      "costUsdSincePrev": 0.66
+    },
+    {
+      "hash": "152e3ac",
+      "time": "2026-11-02T21:25:55+01:00",
+      "phase": 4,
+      "subject": "Duplicate detection and save-time warning (#9)",
+      "type": null,
+      "files": 9,
+      "lines": 394,
+      "linesAll": 394,
+      "categories": {
+        "code": 227,
+        "test": 165,
+        "docs": 2
+      },
+      "mixed": true,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 1.7,
+      "activeMinutesSincePrev": 1.7,
+      "modelCalls": 3,
+      "outputTokens": 9787,
+      "costUsdSincePrev": 0.42
+    },
+    {
+      "hash": "5d84145",
+      "time": "2026-11-02T21:29:24+01:00",
+      "phase": 4,
+      "subject": "Merge (#10)",
+      "type": null,
+      "files": 5,
+      "lines": 608,
+      "linesAll": 608,
+      "categories": {
+        "code": 359,
+        "test": 249
+      },
+      "mixed": true,
+      "oversize": true,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 3.5,
+      "activeMinutesSincePrev": 3.5,
+      "modelCalls": 7,
+      "outputTokens": 16221,
+      "costUsdSincePrev": 0.89
+    },
+    {
+      "hash": "c9a7153",
+      "time": "2026-11-02T21:33:11+01:00",
+      "phase": 4,
+      "subject": "Excel Export (#11)",
+      "type": null,
+      "files": 10,
+      "lines": 506,
+      "linesAll": 506,
+      "categories": {
+        "code": 200,
+        "test": 304,
+        "docs": 2
+      },
+      "mixed": true,
+      "oversize": true,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 3.8,
+      "activeMinutesSincePrev": 3.8,
+      "modelCalls": 9,
+      "outputTokens": 14807,
+      "costUsdSincePrev": 1
+    },
+    {
+      "hash": "33ac52b",
+      "time": "2026-11-02T21:34:10+01:00",
+      "phase": 4,
+      "subject": "Permanent erasure and Workspace deletion (#12)",
+      "type": null,
+      "files": 2,
+      "lines": 133,
+      "linesAll": 133,
+      "categories": {
+        "test": 133
+      },
+      "mixed": false,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": true,
+      "minutesSincePrev": 1,
+      "activeMinutesSincePrev": 1,
+      "modelCalls": 4,
+      "outputTokens": 5175,
+      "costUsdSincePrev": 0.41
+    },
+    {
+      "hash": "3861bea",
+      "time": "2026-11-02T21:36:09+01:00",
+      "phase": 4,
+      "subject": "Isolation audit and Viewer journey (#13)",
+      "type": null,
+      "files": 4,
+      "lines": 269,
+      "linesAll": 269,
+      "categories": {
+        "test": 269
+      },
+      "mixed": false,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 2,
+      "activeMinutesSincePrev": 2,
+      "modelCalls": 4,
+      "outputTokens": 9383,
+      "costUsdSincePrev": 0.53
+    },
+    {
+      "hash": "12cbc14",
+      "time": "2026-11-02T21:41:02+01:00",
+      "phase": 6,
+      "subject": "Scale and accessibility (#14)",
+      "type": null,
+      "files": 7,
+      "lines": 305,
+      "linesAll": 305,
+      "categories": {
+        "docs": 70,
+        "code": 201,
+        "test": 34
+      },
+      "mixed": true,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 4.9,
+      "activeMinutesSincePrev": 4.9,
+      "modelCalls": 10,
+      "outputTokens": 13179,
+      "costUsdSincePrev": 1.1
+    },
+    {
+      "hash": "dead015",
+      "time": "2026-11-02T21:44:45+01:00",
+      "phase": 6,
+      "subject": "Address code review findings",
+      "type": null,
+      "files": 6,
+      "lines": 31,
+      "linesAll": 31,
+      "categories": {
+        "code": 26,
+        "test": 5
+      },
+      "mixed": true,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 3.7,
+      "activeMinutesSincePrev": 3.7,
+      "modelCalls": 38,
+      "outputTokens": 22184,
+      "costUsdSincePrev": 2.4
+    },
+    {
+      "hash": "493d3bf",
+      "time": "2026-11-02T22:58:29+01:00",
+      "phase": 6,
+      "subject": "Close spec #1 gaps: 404 before body, failed sign-in limit, all duplicates",
+      "type": null,
+      "files": 11,
+      "lines": 160,
+      "linesAll": 160,
+      "categories": {
+        "code": 105,
+        "test": 51,
+        "docs": 4
+      },
+      "mixed": true,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 73.7,
+      "activeMinutesSincePrev": 2.2,
+      "modelCalls": 44,
+      "outputTokens": 37441,
+      "costUsdSincePrev": 5.02
+    },
+    {
+      "hash": "937ed05",
+      "time": "2026-11-02T23:01:57+01:00",
+      "phase": 6,
+      "subject": "Backend acceptance tests use tokens from the Firebase Auth Emulator",
+      "type": null,
+      "files": 5,
+      "lines": 129,
+      "linesAll": 129,
+      "categories": {
+        "test": 129
+      },
+      "mixed": false,
+      "oversize": false,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 3.5,
+      "activeMinutesSincePrev": 3.5,
+      "modelCalls": 3,
+      "outputTokens": 5365,
+      "costUsdSincePrev": 0.44
+    },
+    {
+      "hash": "7e8dbd7",
+      "time": "2026-11-02T23:59:41+01:00",
+      "phase": 6,
+      "subject": "Backend quality gate: line coverage 99.5 %, mutation score 95 %",
+      "type": null,
+      "files": 28,
+      "lines": 1080,
+      "linesAll": 1080,
+      "categories": {
+        "build": 62,
+        "code": 123,
+        "test": 895
+      },
+      "mixed": true,
+      "oversize": true,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 57.7,
+      "activeMinutesSincePrev": 23.2,
+      "modelCalls": 55,
+      "outputTokens": 105685,
+      "costUsdSincePrev": 9.31
+    },
+    {
+      "hash": "d31b024",
+      "time": "2026-11-03T00:39:20+01:00",
+      "phase": 6,
+      "subject": "Frontend quality gate: line coverage 100 %, mutation score 93.8 %",
+      "type": null,
+      "files": 22,
+      "lines": 1935,
+      "linesAll": 4846,
+      "categories": {
+        "docs": 8,
+        "code": 123,
+        "build": 20,
+        "test": 1784
+      },
+      "mixed": true,
+      "oversize": true,
+      "tiny": false,
+      "messageOk": false,
+      "ids": [],
+      "idsExpected": false,
+      "burst": false,
+      "minutesSincePrev": 39.7,
+      "activeMinutesSincePrev": 3,
+      "modelCalls": 13,
+      "outputTokens": 5622,
+      "costUsdSincePrev": 1.89
+    }
+  ],
+  "commitSummary": {
+    "count": 18,
+    "byPhase": {
+      "4": 12,
+      "6": 6
+    },
+    "byType": {
+      "other": 18
+    },
+    "linesMedian": 395.5,
+    "linesP90": 1939,
+    "linesMax": 4647,
+    "filesMedian": 6.5,
+    "pctOversize": 44.4,
+    "pctMixed": 72.2,
+    "pctTiny": 0,
+    "pctBurst": 5.6,
+    "pctMessageOk": 0,
+    "pctWithIds": null,
+    "costPerCommitMedian": 0.96,
+    "costPerCommitMean": 1.79,
+    "activeMinPerCommitMedian": 3.3,
+    "activeMinPerCommitMean": 4.8,
+    "longestActiveGapMin": 23.2,
+    "costPer100Lines": 0.23,
+    "costAfterLastCommitUsd": 0.15,
+    "statsOnlyCommitsLeftOut": 0,
+    "range": "96fb6d77d0b4ab4677f1dc581d9c5dd4813f126e..d31b024e0f6c9d504978ac23c46a5bcabb96cb74"
+  },
+  "notes": [
+    "2 sub-agent transcript(s) counted",
+    "29 model call(s) after the run's end (the session went on) cost $1.78: not part of the run"
+  ],
+  "transcripts": {
+    "main": [
+      "/home/tjan-kazar/.claude/projects/-home-tjan-kazar-storage-Work-lab-agentic-lab-matt-workflow/943471d7-ce63-42b7-bdc3-7c65bfa98f08.jsonl"
+    ],
+    "subagents": [
+      "/home/tjan-kazar/.claude/projects/-home-tjan-kazar-storage-Work-lab-agentic-lab-matt-workflow/943471d7-ce63-42b7-bdc3-7c65bfa98f08/subagents/agent-acab4bc40990ed7c1.jsonl",
+      "/home/tjan-kazar/.claude/projects/-home-tjan-kazar-storage-Work-lab-agentic-lab-matt-workflow/943471d7-ce63-42b7-bdc3-7c65bfa98f08/subagents/agent-ad3ed6ecdc23b0c4d.jsonl"
+    ],
+    "backup": null
+  }
+}

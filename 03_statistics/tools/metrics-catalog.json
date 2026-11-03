@@ -1,0 +1,666 @@
+{
+  "_about": "One entry per attribute shown in the report. dir: lower = lower is better, higher = higher is better, target = should equal `target`, info = context only. goal says what we are trying to achieve; how says how it is computed. build-report.mjs computes the values, the page only renders this catalog. Quality is a gate, cost is the outcome: costToGate, gateMet and their companions are in the group 'gate'; test counts are cost drivers (info).",
+  "groups": [
+    {
+      "id": "gate",
+      "label": "Quality gate: the same quality, and what it cost"
+    },
+    {
+      "id": "time",
+      "label": "Time (human waiting excluded)"
+    },
+    {
+      "id": "cost",
+      "label": "Cost and context"
+    },
+    {
+      "id": "flow",
+      "label": "Flow: human involvement and rework"
+    },
+    {
+      "id": "quality",
+      "label": "Product quality"
+    },
+    {
+      "id": "commits",
+      "label": "Commits: size, logic and the work between them"
+    },
+    {
+      "id": "checks",
+      "label": "Trust in the measurement"
+    },
+    {
+      "id": "size",
+      "label": "Size of the result"
+    }
+  ],
+  "metrics": [
+    {
+      "id": "mutAdjFrontend",
+      "group": "gate",
+      "label": "Mutation score, frontend (adjusted)",
+      "unit": "pct",
+      "dir": "higher",
+      "goal": "As the backend row. Gate criterion.",
+      "how": "mutation.scoreAdjusted, else the raw score (noted)."
+    },
+    {
+      "id": "mutAdjBackend",
+      "group": "gate",
+      "label": "Mutation score, backend (adjusted)",
+      "unit": "pct",
+      "dir": "higher",
+      "goal": "Killed plus survivors justified as equivalent, over all mutants, full suite and the project's scope. Gate criterion. Compare only above the threshold as a tie-breaker.",
+      "how": "mutation.scoreAdjusted, else the raw score (noted)."
+    },
+    {
+      "id": "testsAfterFirstMutation",
+      "group": "gate",
+      "label": "Tests added after the first mutation run",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "The iteration share of the test count: tests written only to reach the gate after measuring.",
+      "how": "Final passing tests minus the tests at the first mutation run (codeMetrics.gate.testsAtFirstMutation)."
+    },
+    {
+      "id": "mutationRounds",
+      "group": "gate",
+      "label": "Mutation survivor rounds",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "How often the first full mutation run was not enough. 0 = the tests written before measuring already met the gate. Exposes first-pass luck.",
+      "how": "Sum of codeMetrics.gate.mutationRounds over the components."
+    },
+    {
+      "id": "gateOvershoot",
+      "group": "gate",
+      "label": "Gate overshoot (points)",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "Quality above the threshold is not needed and cost money. Average points above the threshold over the criteria that passed. Lower means the run stopped at the gate.",
+      "how": "Mean of value minus threshold over passed coverage and mutation criteria."
+    },
+    {
+      "id": "gateShortfall",
+      "group": "gate",
+      "label": "Gate shortfall (points)",
+      "unit": "count",
+      "dir": "target",
+      "target": 0,
+      "goal": "How far the run is below the thresholds, summed over the coverage and mutation criteria it missed. Target: zero.",
+      "how": "Sum of threshold minus value for each missed criterion."
+    },
+    {
+      "id": "gateMet",
+      "group": "gate",
+      "label": "Quality gate met",
+      "unit": "yesno",
+      "dir": "target",
+      "target": 1,
+      "headline": true,
+      "goal": "All runs of a setup must reach the same quality: line coverage and adjusted mutation score at or above the thresholds per component, final run green, no open Critical or High finding. A run that misses it is not comparable.",
+      "how": "Computed from the run's coverage, adjusted mutation score, final run and open findings against the thresholds of quality-requirements.md (history: the thresholds set in the config, applied afterwards)."
+    },
+    {
+      "id": "costToGate",
+      "group": "gate",
+      "label": "Cost to reach the gate ($)",
+      "unit": "usd",
+      "dir": "lower",
+      "headline": true,
+      "goal": "The objective. What the run cost, human waiting excluded, to deliver a result that meets the quality gate. Shown only when the gate was met: a run below the gate did not deliver the same quality and cannot be compared.",
+      "how": "Cost excl. waits, only when every gate criterion that could be assessed passed."
+    },
+    {
+      "id": "agentMin",
+      "group": "time",
+      "label": "Agent time",
+      "unit": "min",
+      "dir": "lower",
+      "headline": true,
+      "goal": "What the workflow itself needs in minutes, with every wait for a human removed. The main time figure.",
+      "how": "Sum over phases of phase wall time minus recorded waits and idle gaps above 10 minutes. Gaps between phases are dropped."
+    },
+    {
+      "id": "humanWaitMin",
+      "group": "time",
+      "label": "Human wait (excluded)",
+      "unit": "min",
+      "dir": "lower",
+      "goal": "Not a property of the workflow but of how the run was operated. Lower means fewer blockers. It is removed from every other number.",
+      "how": "Recorded humanInterventions plus idle gaps above 10 minutes in the transcript, inside phases."
+    },
+    {
+      "id": "waitsOver60",
+      "group": "time",
+      "label": "Waits over 1 hour",
+      "unit": "count",
+      "dir": "target",
+      "target": 0,
+      "goal": "Each one lets the 1-hour prompt cache expire and costs a full-context rewrite. Target: none.",
+      "how": "Waits longer than 60 minutes, including gaps between phases."
+    },
+    {
+      "id": "modelMin",
+      "group": "time",
+      "label": "Model time",
+      "unit": "min",
+      "dir": "lower",
+      "goal": "Time the model spends generating. It falls with fewer, shorter calls.",
+      "how": "Transcript gaps that end in an assistant message (needs the transcript)."
+    },
+    {
+      "id": "toolMin",
+      "group": "time",
+      "label": "Tool time",
+      "unit": "min",
+      "dir": "lower",
+      "goal": "Time in builds, test runs and scanners. Shows what to speed up, parallelise or run less often.",
+      "how": "Transcript gaps that end in a tool result, without questions to the human (needs the transcript)."
+    },
+    {
+      "id": "overheadMin",
+      "group": "time",
+      "label": "Overhead phases (0, 1, 2, 7)",
+      "unit": "min",
+      "dir": "lower",
+      "goal": "Preflight, requirements, design and release. Setup work that does not build or test the product; lower is better.",
+      "how": "Agent minutes in phases 0, 1, 2 and 7."
+    },
+    {
+      "id": "coreMin",
+      "group": "time",
+      "label": "Build, test, verify (4 to 6)",
+      "unit": "min",
+      "dir": "info",
+      "goal": "Where the product is made and checked. More here can mean more quality (see mutation score), so it is context, not a target.",
+      "how": "Agent minutes in phases 4, 5 and 6."
+    },
+    {
+      "id": "agentMinPerTest",
+      "group": "time",
+      "label": "Agent minutes per passing test",
+      "unit": "min2",
+      "dir": "info",
+      "goal": "Not a goal: dividing by the test count would reward writing more tests. Shown for context only.",
+      "how": "Agent time divided by the final passing test count."
+    },
+    {
+      "id": "costExcl",
+      "group": "cost",
+      "label": "Cost excl. waits",
+      "unit": "usd",
+      "dir": "lower",
+      "headline": true,
+      "goal": "Dollars at list prices without the cache rebuilds that waits caused. The comparison figure for cost.",
+      "how": "Tokens times list prices, minus the extra of each cache write above 150k tokens that followed a wait over an hour."
+    },
+    {
+      "id": "costLogged",
+      "group": "cost",
+      "label": "Cost as logged",
+      "unit": "usd",
+      "dir": "info",
+      "goal": "What the run actually cost. Higher than the line above only when waits caused cache rebuilds.",
+      "how": "Tokens times list prices (usage.costUsd); the run-log's own figure where no transcript exists."
+    },
+    {
+      "id": "rebuildCost",
+      "group": "cost",
+      "label": "Cache rebuilds caused by waits",
+      "unit": "usd",
+      "dir": "target",
+      "target": 0,
+      "goal": "Money lost to idling past the cache lifetime. Target: zero.",
+      "how": "Cost as logged minus cost excl. waits. Estimated from excess cache-write tokens where no transcript exists."
+    },
+    {
+      "id": "costPerTest",
+      "group": "cost",
+      "label": "Cost per passing test",
+      "unit": "usd3",
+      "dir": "info",
+      "goal": "Not a goal: dividing by the test count would reward writing more tests. Shown for context only.",
+      "how": "Cost excl. waits divided by the final passing test count."
+    },
+    {
+      "id": "modelCalls",
+      "group": "cost",
+      "label": "Model calls",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "Every call re-reads the whole context, so fewer calls is the surest way to lower cost.",
+      "how": "Distinct assistant messages in the transcript."
+    },
+    {
+      "id": "toolCalls",
+      "group": "cost",
+      "label": "Tool calls",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "Fewer, larger steps cost less. Many Edit calls point to rework.",
+      "how": "Tool-use entries in the transcript (or the count in the log)."
+    },
+    {
+      "id": "toolErrorPct",
+      "group": "cost",
+      "label": "Tool calls that failed",
+      "unit": "pct",
+      "dir": "lower",
+      "goal": "Failed calls are wasted calls and context.",
+      "how": "Tool results with is_error divided by tool calls."
+    },
+    {
+      "id": "outputTokens",
+      "group": "cost",
+      "label": "Output tokens",
+      "unit": "k",
+      "dir": "lower",
+      "goal": "What the model wrote, including thinking. Output costs five times the price of uncached input.",
+      "how": "Sum over calls."
+    },
+    {
+      "id": "avgContext",
+      "group": "cost",
+      "label": "Average context per call",
+      "unit": "k",
+      "dir": "lower",
+      "goal": "The main cost driver: each call re-reads all of it at cache-read price. Starting a fresh context per phase lowers it.",
+      "how": "Input plus cache read plus cache write tokens per call, averaged."
+    },
+    {
+      "id": "peakContext",
+      "group": "cost",
+      "label": "Peak context",
+      "unit": "k",
+      "dir": "lower",
+      "goal": "How large the context got before the end.",
+      "how": "Largest context of any call."
+    },
+    {
+      "id": "pctOver150k",
+      "group": "cost",
+      "label": "Calls above 150k context",
+      "unit": "pct",
+      "dir": "lower",
+      "goal": "Long contexts are expensive; this is the share of calls in that range.",
+      "how": "Calls with more than 150k context tokens divided by all calls."
+    },
+    {
+      "id": "blocking",
+      "group": "flow",
+      "label": "Blocking decisions",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "Each one stops the run for a human. Answers that recur across runs can be given in advance in the inputs.",
+      "how": "Decision records of type blocking."
+    },
+    {
+      "id": "interventions",
+      "group": "flow",
+      "label": "Human interventions",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "How often the human had to act or answer.",
+      "how": "Entries in humanInterventions."
+    },
+    {
+      "id": "approvalPrompts",
+      "group": "flow",
+      "label": "Approval prompts",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "How often the human had to approve a tool call; everything else was decided by the permission mode or the classifier.",
+      "how": "Permission decisions in the transcript whose source is not the configuration."
+    },
+    {
+      "id": "decisions",
+      "group": "flow",
+      "label": "Decision records",
+      "unit": "count",
+      "dir": "info",
+      "goal": "All decisions, blocking or not. A high count with few blocking ones means the agent decides well on its own.",
+      "how": "Entries in decisions."
+    },
+    {
+      "id": "fixLoops",
+      "group": "flow",
+      "label": "Fix loops",
+      "unit": "count",
+      "dir": "info",
+      "goal": "Rework found in verification. The count alone says little: the same work done earlier shows up as time instead.",
+      "how": "Entries in fixLoops."
+    },
+    {
+      "id": "loopMin",
+      "group": "flow",
+      "label": "Fix loop minutes",
+      "unit": "min",
+      "dir": "lower",
+      "goal": "What rework actually cost in time. Short loops that fix template-avoidable defects are cheap but still avoidable.",
+      "how": "Sum of end minus start over fix loops that record both."
+    },
+    {
+      "id": "loopsNeedHuman",
+      "group": "flow",
+      "label": "Fix loops that needed a human",
+      "unit": "count",
+      "dir": "target",
+      "target": 0,
+      "goal": "A loop that waits for a human is the expensive kind. Target: none.",
+      "how": "fixLoops with needsHuman true (schema 2 logs only)."
+    },
+    {
+      "id": "frozenChanges",
+      "group": "flow",
+      "label": "Frozen-test changes",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "Each change to a frozen acceptance test needed a human. Fewer means better requirements and test design.",
+      "how": "acceptanceCriteria.frozenTestChanges, or the decisions that approved a manifest change."
+    },
+    {
+      "id": "divergences",
+      "group": "flow",
+      "label": "Deviations from the process",
+      "unit": "count",
+      "dir": "target",
+      "target": 0,
+      "goal": "Every departure from the rules makes the run less comparable. Target: none.",
+      "how": "Entries in divergences (blank when the log has no such field)."
+    },
+    {
+      "id": "finalTests",
+      "group": "quality",
+      "label": "Passing tests (final run)",
+      "unit": "count",
+      "dir": "info",
+      "goal": "A cost driver, not a quality measure: the number of tests the run needed to reach the quality gate. More tests are not better and fewer are not better; compare quality by the gate and cost by the cost rows.",
+      "how": "finalTestRun.passed, all levels."
+    },
+    {
+      "id": "finalFailed",
+      "group": "quality",
+      "label": "Failing tests (final run)",
+      "unit": "count",
+      "dir": "target",
+      "target": 0,
+      "goal": "The run must end green.",
+      "how": "finalTestRun.failed."
+    },
+    {
+      "id": "oracleRegression",
+      "group": "quality",
+      "label": "Hidden oracle: base project scenarios passed",
+      "unit": "pct",
+      "dir": "higher",
+      "goal": "The base project still works as specified, judged by checks the agent never saw. In a brownfield run a drop means the change broke existing behaviour.",
+      "how": "results/oracle/oracle-summary.json, regression R01-R15 (feature experiment oracle): passed of total; empty when the oracle was not run."
+    },
+    {
+      "id": "oracleFeature",
+      "group": "quality",
+      "label": "Hidden oracle: feature scenarios passed",
+      "unit": "pct",
+      "dir": "higher",
+      "goal": "The feature works as specified, judged by checks the agent never saw; the same scenarios for greenfield and brownfield runs of a feature.",
+      "how": "results/oracle/oracle-summary.json, feature scenarios (search S01-S10, group G01-G11): passed of total; empty for normal runs and when the oracle was not run."
+    },
+    {
+      "id": "firstFailed",
+      "group": "quality",
+      "label": "Failing tests (first run)",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "Defects that reached the first full run. Lower means the build phase was cleaner.",
+      "how": "firstTestRun.failed (a run that did not compile is blank)."
+    },
+    {
+      "id": "findingsTotal",
+      "group": "quality",
+      "label": "Findings as found",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "Issues the verification phase had to deal with.",
+      "how": "Sum of findings by severity."
+    },
+    {
+      "id": "critHigh",
+      "group": "quality",
+      "label": "Critical and High as found",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "The serious ones. Some are false positives, so read them with the findings table.",
+      "how": "findings.critical + findings.high."
+    },
+    {
+      "id": "openCritHigh",
+      "group": "quality",
+      "label": "Critical and High open at end",
+      "unit": "count",
+      "dir": "target",
+      "target": 0,
+      "goal": "The run may not finish with one open.",
+      "how": "openAtEnd.critical + openAtEnd.high (blank when not recorded)."
+    },
+    {
+      "id": "mutBackend",
+      "group": "quality",
+      "label": "Mutation score, backend (raw)",
+      "unit": "pct",
+      "dir": "info",
+      "goal": "Killed mutants over all mutants, with the project's scope. Context: the gate uses the adjusted score. Comparable only for the same scope (see notes).",
+      "how": "From codeMetrics or the run summary, with scope."
+    },
+    {
+      "id": "mutFrontend",
+      "group": "quality",
+      "label": "Mutation score, frontend (raw)",
+      "unit": "pct",
+      "dir": "info",
+      "goal": "Killed mutants over all mutants, with the project's scope. Context: the gate uses the adjusted score. Comparable only for the same scope (see notes).",
+      "how": "From codeMetrics or the run summary."
+    },
+    {
+      "id": "covBackend",
+      "group": "quality",
+      "label": "Line coverage, backend",
+      "unit": "pct",
+      "dir": "higher",
+      "goal": "Share of backend code the tests run, all levels together. Part of the quality gate.",
+      "how": "From codeMetrics or the run summary."
+    },
+    {
+      "id": "covFrontend",
+      "group": "quality",
+      "label": "Line coverage, frontend",
+      "unit": "pct",
+      "dir": "higher",
+      "goal": "Share of frontend code the tests run, all levels together. Part of the quality gate.",
+      "how": "From codeMetrics or the run summary."
+    },
+    {
+      "id": "commitCount",
+      "group": "commits",
+      "label": "Commits",
+      "unit": "count",
+      "dir": "info",
+      "goal": "How the work was cut into steps. Compare with the units in phases.md: about one commit per story, document, layer or fix.",
+      "how": "Commits between the start and final commit of the run (git log)."
+    },
+    {
+      "id": "commitLinesMedian",
+      "group": "commits",
+      "label": "Changed lines per commit (median)",
+      "unit": "count",
+      "dir": "info",
+      "goal": "Typical step size. The guide is small, finished steps: well below 400. A median of 1 to 5 means noise, a median near 400 means batching.",
+      "how": "Added plus deleted lines, without logs, lock files and generated or build folders."
+    },
+    {
+      "id": "commitLinesMax",
+      "group": "commits",
+      "label": "Largest commit (changed lines)",
+      "unit": "count",
+      "dir": "lower",
+      "goal": "The commit that hurts review most. The guide allows about 400 changed lines or 15 files.",
+      "how": "Largest commit by changed lines, same counting as above."
+    },
+    {
+      "id": "commitPctOversize",
+      "group": "commits",
+      "label": "Commits over the size guide",
+      "unit": "pct",
+      "dir": "target",
+      "target": 0,
+      "goal": "Share of commits above 15 files or 400 changed lines (working-rules.md). Target: none without a stated reason.",
+      "how": "Commits over the guide divided by all commits."
+    },
+    {
+      "id": "commitPctMixed",
+      "group": "commits",
+      "label": "Commits that mix concerns",
+      "unit": "pct",
+      "dir": "target",
+      "target": 0,
+      "goal": "Code, tests, documents and build or dependency changes belong in separate commits (working-rules.md). Target: none.",
+      "how": "Commits whose changed files fall into more than one of code, test, docs, build."
+    },
+    {
+      "id": "commitPctMessageOk",
+      "group": "commits",
+      "label": "Commits with a correct message",
+      "unit": "pct",
+      "dir": "higher",
+      "goal": "Format `<type>: <summary> (IDs)` with a known type and at most 72 characters. Target: 100.",
+      "how": "Subjects that match the format divided by all commits."
+    },
+    {
+      "id": "commitPctBurst",
+      "group": "commits",
+      "label": "Commits made within a minute of the previous one",
+      "unit": "pct",
+      "dir": "lower",
+      "goal": "Several commits created in one burst usually mean work was batched and committed together, not committed when finished. Lower is better.",
+      "how": "Commits less than 60 seconds after the previous commit."
+    },
+    {
+      "id": "commitCostMedian",
+      "group": "commits",
+      "label": "Cost between commits (median)",
+      "unit": "usd",
+      "dir": "info",
+      "goal": "How much model work piles up before a commit. Small steady steps are cheaper to review and to undo; 0 means the commit came in a burst.",
+      "how": "Cost of the model calls between the previous commit and this one (needs the transcript)."
+    },
+    {
+      "id": "commitActiveMinMedian",
+      "group": "commits",
+      "label": "Minutes between commits (median, waits removed)",
+      "unit": "min",
+      "dir": "info",
+      "goal": "Rhythm of the work. Very long gaps mean big batches, near zero means bursts.",
+      "how": "Time since the previous commit minus waits for a human."
+    },
+    {
+      "id": "commitCostPer100Lines",
+      "group": "commits",
+      "label": "Cost per 100 committed lines",
+      "unit": "usd",
+      "dir": "lower",
+      "goal": "Cost efficiency of the code and documents that reach the repository.",
+      "how": "Cost between commits divided by committed lines, times 100."
+    },
+    {
+      "id": "subagentCost",
+      "group": "checks",
+      "label": "Cost of sub-agents",
+      "unit": "usd",
+      "dir": "info",
+      "goal": "Work done by sub-agents. Included in the cost above; shown so it is not a surprise.",
+      "how": "Calls found in the sub-agent transcripts that sit next to the session file."
+    },
+    {
+      "id": "phaseHelperPct",
+      "group": "checks",
+      "label": "Phase timestamps written with the clock tool",
+      "unit": "pct",
+      "dir": "higher",
+      "goal": "Phase boundaries written by tools/stat.mjs carry the real time; typed ones can be estimates. Target: 100.",
+      "how": "Boundaries in run-log.json that match a stat.mjs call in the transcript, within two minutes."
+    },
+    {
+      "id": "unrecordedIdleMin",
+      "group": "checks",
+      "label": "Idle time missing from the log",
+      "unit": "min",
+      "dir": "target",
+      "target": 0,
+      "goal": "Waiting found in the transcript that humanInterventions does not record. Target: none.",
+      "how": "Transcript gaps above 10 minutes not covered by a recorded intervention."
+    },
+    {
+      "id": "ac",
+      "group": "size",
+      "label": "Acceptance criteria",
+      "unit": "count",
+      "dir": "info",
+      "goal": "How much behaviour was specified. Context for test counts.",
+      "how": "acceptanceCriteria.total or the criteria document."
+    },
+    {
+      "id": "prodLoc",
+      "group": "size",
+      "label": "Production lines",
+      "unit": "count",
+      "dir": "info",
+      "goal": "Size of the product. Cost and time should scale with it, not with process overhead.",
+      "how": "cloc, backend plus frontend."
+    },
+    {
+      "id": "testLoc",
+      "group": "size",
+      "label": "Test lines",
+      "unit": "count",
+      "dir": "info",
+      "goal": "Size of the test code. A cost driver, not a quality measure.",
+      "how": "cloc, backend plus frontend."
+    },
+    {
+      "id": "testRatio",
+      "group": "size",
+      "label": "Test to production lines",
+      "unit": "ratio",
+      "dir": "info",
+      "goal": "Test lines per production line. A cost driver, not a quality measure.",
+      "how": "Test lines divided by production lines."
+    },
+    {
+      "id": "testsPer1000Loc",
+      "group": "size",
+      "label": "Tests per 1000 production lines",
+      "unit": "count",
+      "dir": "info",
+      "goal": "Size of the suite relative to the product, a cost driver.",
+      "how": "Final passing tests divided by production lines, times 1000."
+    },
+    {
+      "id": "unitTests",
+      "group": "size",
+      "label": "Unit tests (final run)",
+      "unit": "count",
+      "dir": "info",
+      "goal": "Unit tests needed to reach the gate. Acceptance and end-to-end tests are fixed by the inputs.",
+      "how": "finalTestRun.byLevel.unit."
+    },
+    {
+      "id": "e2eTests",
+      "group": "size",
+      "label": "End-to-end tests (final run)",
+      "unit": "count",
+      "dir": "info",
+      "goal": "Fixed by the scenario list of the inputs; a different number means the scenarios were split or added.",
+      "how": "finalTestRun.byLevel.e2e."
+    }
+  ]
+}

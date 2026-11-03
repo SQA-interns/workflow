@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Run Comparison</title>
+<style>
+/* One readable column of collapsible panels. Tables are plain: full panel width, thin lines, green for the best value and red for the worst. */
+:root{
+  --bg:#f6f7f9;--surface:#ffffff;--fg:#1b2430;--muted:#5b6675;--line:#dde2e9;--vline:#c9d0da;
+  --accent:#2f6fb0;--warn:#b4531a;--good:#2a7d5f;--bad:#b3463a;--goodbg:rgba(42,125,95,.13);--badbg:rgba(179,70,58,.12);
+  --s-1:#2f6fb0;--s-2:#d9822b;--s-3:#2a9d8f;--s-4:#7b5ea7;--s-5:#c2477f;--s-6:#7a8b2e;--s-7:#8a8f98;--s-8:#b4531a;
+  --q-1:#2f6fb0;--q-2:#7fb2e5;--q-3:#7b5ea7;--q-4:#c3aee3;
+  --k-model:#2f6fb0;--k-mixed:#7b5ea7;--k-tool:#d9822b;--k-other:#b9c0cb;--k-cr:#2f6fb0;--k-cw:#7b5ea7;--k-out:#2a9d8f;--k-rebuild:#c0392b;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171e;--surface:#1a212b;--fg:#e6eaf0;--muted:#9aa5b4;--line:#2b3441;--vline:#3a4658;--accent:#6aa6e6;--warn:#e89a60;--good:#5cc7a0;--bad:#e07a6e;--goodbg:rgba(92,199,160,.15);--badbg:rgba(224,122,110,.14);
+  --s-1:#6aa6e6;--s-2:#eba04f;--s-3:#4dc2b3;--s-4:#a58bd4;--s-5:#e07aa8;--s-6:#b3c45a;--s-7:#98a0ac;--s-8:#e89a60;
+  --q-1:#6aa6e6;--q-2:#3b6fa3;--q-3:#a58bd4;--q-4:#6d5a94;
+  --k-model:#6aa6e6;--k-mixed:#b79bea;--k-tool:#eba04f;--k-other:#4a5565;--k-cr:#6aa6e6;--k-cw:#a58bd4;--k-out:#4dc2b3;--k-rebuild:#ef6a5b;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171e;--surface:#1a212b;--fg:#e6eaf0;--muted:#9aa5b4;--line:#2b3441;--vline:#3a4658;--accent:#6aa6e6;--warn:#e89a60;--good:#5cc7a0;--bad:#e07a6e;--goodbg:rgba(92,199,160,.15);--badbg:rgba(224,122,110,.14);
+  --s-1:#6aa6e6;--s-2:#eba04f;--s-3:#4dc2b3;--s-4:#a58bd4;--s-5:#e07aa8;--s-6:#b3c45a;--s-7:#98a0ac;--s-8:#e89a60;
+  --q-1:#6aa6e6;--q-2:#3b6fa3;--q-3:#a58bd4;--q-4:#6d5a94;
+  --k-model:#6aa6e6;--k-mixed:#b79bea;--k-tool:#eba04f;--k-other:#4a5565;--k-cr:#6aa6e6;--k-cw:#a58bd4;--k-out:#4dc2b3;--k-rebuild:#ef6a5b;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--font);margin:0;padding-inline:16px;padding-block:0 64px}
+main{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px;padding-top:24px}
+h1{overflow-wrap:anywhere;font-size:28px;line-height:1.15;margin:0;text-wrap:balance}
+h2{font-size:18px;margin:0;text-wrap:balance}
+h3{font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+p{margin:0 0 10px}
+.stack{display:flex;flex-direction:column;gap:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px 24px;min-width:0}
+details.panel>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+details.panel>summary::-webkit-details-marker{display:none}
+details.panel>summary::before{content:"▾";color:var(--muted);font-size:14px;width:14px;flex:none}
+details.panel:not([open])>summary::before{content:"▸"}
+details.panel>.body{margin-top:16px;min-width:0}
+.how{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.how li{padding-left:14px;border-left:3px solid var(--line)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px;border:1px solid var(--line)}
+.sw.good{background:var(--goodbg);border-color:var(--good)}.sw.bad{background:var(--badbg);border-color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px;min-width:0}
+.kpi b{display:block;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi span{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:20px;align-items:start}
+.scroll{overflow-x:auto}
+
+/* run selector, always visible */
+.bar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:8px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px}
+.bar .bl{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:12px}
+.bar .sp{flex:1}
+.bar label{display:inline-flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer}
+.chip,.btn{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:14px;padding:2px 10px;cursor:pointer;max-width:18rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.chip[aria-pressed="false"]{opacity:.55;text-decoration:line-through}
+.chip[aria-pressed="false"] i{background:transparent!important;border:1px solid var(--muted)}
+.btn{border-radius:6px}
+.chip:hover,.btn:hover{border-color:var(--accent)}
+.chip:focus-visible,.btn:focus-visible,.hx:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* tables: full width of the panel, the first column fixed, the run columns share the rest equally */
+table{border-collapse:collapse;width:100%;table-layout:fixed;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{padding:10px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;overflow-wrap:anywhere}
+td+td,th+th{border-left:1px solid var(--vline)}
+th{font-weight:700;vertical-align:bottom;position:relative;padding-right:28px;border-bottom:2px solid var(--vline)}
+th .rt{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:2px}
+th.fh{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.hx{position:absolute;top:6px;right:6px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;border-radius:4px;padding:1px 5px}
+.hx:hover{background:var(--line);color:var(--fg)}
+tbody tr:hover td{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+tr.grp td{background:color-mix(in srgb,var(--muted) 10%,transparent);font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-left:0}
+td.attr b{font-weight:600}
+td.attr small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;font-weight:400;margin-top:2px}
+td.best{background:var(--goodbg)!important;font-weight:600}
+td.warnc{background:var(--badbg)!important;font-weight:600}
+td.miss{color:var(--muted)}
+td small{display:block;color:var(--muted);font-weight:400;font-size:12.5px}
+.dir{display:inline-block;min-width:22px;text-align:center;font-weight:700;border:1px solid var(--line);border-radius:4px;margin-right:6px;font-size:12px;padding:0 4px;color:var(--muted)}
+.mark{color:var(--warn);font-size:11px;vertical-align:super;margin-left:2px;cursor:help}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-bottom:10px}
+.legend span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.legend i.hatch{background:repeating-linear-gradient(45deg,var(--k-rebuild) 0 2px,transparent 2px 4px);border:1px solid var(--k-rebuild)}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{fill:var(--muted);font:12px var(--font)}
+svg .val{fill:var(--fg);font-weight:600}
+svg .grid{stroke:var(--line);stroke-width:1}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:10px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.bar2{display:inline-block;height:8px;border-radius:2px;vertical-align:middle;margin-left:8px;opacity:.8}
+.runtag{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+ul.note,.note{font-size:13px;color:var(--muted);margin:16px 0 0}
+.empty{color:var(--muted);padding:12px 0}
+code{font-family:var(--mono);font-size:13px}
+.flag{border-left:3px solid var(--warn);padding-left:10px;margin:4px 0;color:var(--fg);font-size:13.5px}
+[hidden]{display:none!important}
+@media print{.bar{position:static}}
+
+</style></head><body>
+<div class="bar" id="bar" role="toolbar" aria-label="Choose the runs to show">
+  <span class="bl">Runs shown</span><span id="chips" style="display:contents"></span>
+  <span class="sp"></span>
+  <label title="Hide the rows of the topic tables where every shown run has the same value"><input type="checkbox" id="onlyDiff"> only rows that differ</label>
+  <button class="btn" id="bAll" type="button">All runs</button>
+  <button class="btn" id="bGate" type="button" title="Show only the runs that met the quality gate">Gate-passing only</button>
+</div>
+<main>
+<header><h1 id="title"></h1></header>
+
+<details class="panel" open>
+  <summary><h2>How to read this report</h2></summary>
+  <div class="body">
+    <ul class="how">
+      <li><b>Pick the runs.</b> The bar at the top shows or hides runs; every table and chart is redrawn. The × in a column header hides that run too, and any panel folds when you click its title.</li>
+      <li><b>Arrows.</b> <span class="dir">↓</span> lower is better, <span class="dir">↑</span> higher is better, <span class="dir">=</span> should equal the target shown, <span class="dir">i</span> context only.</li>
+      <li><b>Colours in the tables.</b> <span class="sw good"></span> green is the best value of a row, <span class="sw bad"></span> red is the worst (or a failed gate item). Rows where all runs are equal have no colour.</li>
+      <li><b>Waiting is excluded.</b> Agent time is wall time minus every wait for a human. A wait over one hour also expires the prompt cache; the rebuild that follows is a cost of the wait and is removed from the cost shown.</li>
+      <li><b>Same numbers for every run.</b> They come from the session transcript where one exists, and from <code>run-log.json</code> otherwise. Under each attribute is what we are trying to achieve.</li>
+      <li><b>Marks after a value.</b> <span class="mark">†</span> estimated, <span class="mark">‡</span> taken from a run summary or another file, <span class="mark">*</span> note; hover for details. “–” means the run did not record it.</li>
+    </ul>
+  </div>
+</details>
+
+<section><div class="kpis" id="kpis"></div></section>
+
+<details class="panel" open id="secGate">
+  <summary><h2>Quality gate</h2></summary>
+  <div class="body"><div class="scroll"><table id="gate"></table></div>
+    <p class="note">Every run of a setup must reach the same quality; what differs is what it cost. A run below the gate delivered something else and is <b>not comparable</b>: its cost is shown hollow in the charts and left out of "Cost to reach the gate". Test counts are not part of the gate, they are a cost driver. A criterion marked “?” could not be assessed (the run has no such component, or an older log lacks the figure) and does not fail the gate. Mutation scopes of runs before template 1.3 differ, so their scores are only indicative.</p></div>
+</details>
+
+<details class="panel" open id="secSetups" hidden>
+  <summary><h2>Setups: runs of the same template version, median and range</h2></summary>
+  <div class="body"><div class="scroll"><table id="setups"></table></div>
+    <p class="note" id="setupsNote"></p></div>
+</details>
+
+<div id="groups" class="stack"></div>
+
+<div class="grid2">
+  <details class="panel" open><summary><h2>Agent time (minutes) ↓</h2></summary><div class="body"><div class="legend"><span><i style="background:var(--k-model)"></i>Model time</span><span><i style="background:var(--k-tool)"></i>Tool time</span><span><i style="background:var(--k-other)"></i>Other / not split</span></div><div id="chTime"></div>
+    <p class="note">Model and tool time need the transcript. Without it the whole bar is agent time.</p></div></details>
+  <details class="panel" open><summary><h2>Cost excl. waits ($) ↓</h2></summary><div class="body"><div class="legend"><span><i style="background:var(--k-cr)"></i>Cache read</span><span><i style="background:var(--k-cw)"></i>Cache write</span><span><i style="background:var(--k-out)"></i>Output</span><span><i class="hatch"></i>Rebuild caused by waits (removed, for reference)</span></div><div id="chCost"></div></div></details>
+  <details class="panel" open><summary><h2>Quality reached against the gate ↑</h2></summary><div class="body"><div class="legend"><span><i style="background:var(--q-1)"></i>Backend line coverage</span><span><i style="background:var(--q-2)"></i>Frontend line coverage</span><span><i style="background:var(--q-3)"></i>Backend mutation (adjusted)</span><span><i style="background:var(--q-4)"></i>Frontend mutation (adjusted)</span></div><div id="chQual"></div>
+    <p class="note">Dashed lines are the thresholds of the gate (line coverage 95 %, adjusted mutation 90 %). A bar that ends short of its line missed the gate.</p></div></details>
+  <details class="panel" open><summary><h2>Work done: calls and tests</h2></summary><div class="body"><div class="legend"><span><i style="background:var(--q-1)"></i>Model calls</span><span><i style="background:var(--q-2)"></i>Tool calls</span><span><i style="background:var(--q-3)"></i>Tests at the end</span><span><i style="background:var(--q-4)"></i>Commits</span></div><div id="chWork"></div>
+    <p class="note">Calls and context are what the cost is made of; tests and commits show how much was produced for it. Counts, not a quality measure.</p></div></details>
+  <details class="panel" open><summary><h2>Cost against agent time</h2></summary><div class="body"><div id="chScatter"></div>
+    <p class="note">Closer to the bottom left is better. Colour is the series. A hollow dot is a run below the quality gate: not comparable. Runs differ in person, machine and template, so read position as a hint, not a ranking.</p></div></details>
+  <details class="panel" open><summary><h2>Average context per call by phase (k tokens) ↓</h2></summary><div class="body"><div class="legend" id="lgRuns"></div><div id="chCtx"></div>
+    <p class="note">Every call re-reads the whole context at cache-read price, so the late phases cost the most per call. Only runs with a transcript.</p></div></details>
+</div>
+
+<details class="panel" open>
+  <summary><h2>Agent minutes per phase</h2></summary>
+  <div class="body"><div class="scroll"><table id="phases"></table></div>
+    <p class="note">Goal: low overhead phases (0, 1, 2, 7). Phases 4 to 6 hold the real work, so more time there can mean more testing, not waste.</p></div>
+</details>
+
+<details class="panel" open id="secCommits" hidden>
+  <summary><h2>Commits</h2></summary>
+  <div class="body"><h3>Changed lines per commit (dashed line: size guide of 400)</h3>
+    <div class="legend"><span><i style="background:var(--k-model)"></i>one concern</span><span><i style="background:var(--k-mixed)"></i>mixes concerns</span><span><i style="background:var(--warn)"></i>over the size guide</span></div>
+    <div id="chCommits"></div>
+    <p class="note">Hover a bar for subject, cost and minutes since the previous commit. Small steady steps are the goal: no commit above the guide, no mixing of code, tests, documents and build changes, and no bursts of several commits within a minute.</p>
+    <div class="scroll" style="margin-top:16px"><table id="commitTable"></table></div></div>
+</details>
+
+<details class="panel" open>
+  <summary><h2>Environment: declared by the operator</h2></summary>
+  <div class="body"><div class="scroll"><table id="envDecl"></table></div>
+    <p class="note">Typed into run-config.md by hand, so it can be wrong (for example copied from another operator's template). A red cell means the session itself contradicts the declaration (hover for why).</p></div>
+</details>
+<details class="panel" open>
+  <summary><h2>Environment: the session</h2></summary>
+  <div class="body"><div class="scroll"><table id="envSession"></table></div>
+    <p class="note">Read from the session transcript. Harness version, effort and permission mode all change cost and speed.</p></div>
+</details>
+<details class="panel" open>
+  <summary><h2>Environment: machine and tools</h2></summary>
+  <div class="body"><div class="scroll"><table id="envMachine"></table></div>
+    <p class="note">Read by <code>stat.mjs init</code> at the start of the run; the last row is the machine the post-run report was measured on.</p></div>
+</details>
+
+<details class="panel" open>
+  <summary><h2>Trust in the measurement</h2></summary>
+  <div class="body"><div class="scroll"><table id="checks"></table></div>
+    <p class="note">Every number in this report is calculated from the session transcript, the sub-agent transcripts and git, and from the run-log written by the clock tool; nothing is typed in by hand. These rows show how complete that evidence was.</p></div>
+</details>
+
+<details class="panel" open>
+  <summary><h2>Waits that were excluded</h2></summary>
+  <div class="body"><div class="scroll"><table id="waits"></table></div></div>
+</details>
+
+<details class="panel" open>
+  <summary><h2>Where the data comes from, and what to keep in mind</h2></summary>
+  <div class="body"><div class="scroll"><table id="sources"></table></div>
+  <ul class="note" id="excluded" style="padding-left:20px;margin:16px 0 0"></ul></div>
+</details>
+</main>
+
+<script>
+const D={"title":"Run report: tjan_single-agent_matt-workflow_contacts_run-1","subtitle":"Run ID tjan-single-agent-matt-workflow-contacts-run-1-opus-5-5-20261102T1947Z-be2f · Template mattpocock-skills 1.3.1 (implement), claude-opus-5-5, effort ?. Human waiting and everything it caused is excluded from every figure that is compared.","built":"2026-11-03","single":true,"catalog":{"_about":"One entry per attribute shown in the report. dir: lower = lower is better, higher = higher is better, target = should equal `target`, info = context only. goal says what we are trying to achieve; how says how it is computed. build-report.mjs computes the values, the page only renders this catalog. Quality is a gate, cost is the outcome: costToGate, gateMet and their companions are in the group 'gate'; test counts are cost drivers (info).","groups":[{"id":"gate","label":"Quality gate: the same quality, and what it cost"},{"id":"time","label":"Time (human waiting excluded)"},{"id":"cost","label":"Cost and context"},{"id":"flow","label":"Flow: human involvement and rework"},{"id":"quality","label":"Product quality"},{"id":"commits","label":"Commits: size, logic and the work between them"},{"id":"checks","label":"Trust in the measurement"},{"id":"size","label":"Size of the result"}],"metrics":[{"id":"mutAdjFrontend","group":"gate","label":"Mutation score, frontend (adjusted)","unit":"pct","dir":"higher","goal":"As the backend row. Gate criterion.","how":"mutation.scoreAdjusted, else the raw score (noted)."},{"id":"mutAdjBackend","group":"gate","label":"Mutation score, backend (adjusted)","unit":"pct","dir":"higher","goal":"Killed plus survivors justified as equivalent, over all mutants, full suite and the project's scope. Gate criterion. Compare only above the threshold as a tie-breaker.","how":"mutation.scoreAdjusted, else the raw score (noted)."},{"id":"testsAfterFirstMutation","group":"gate","label":"Tests added after the first mutation run","unit":"count","dir":"lower","goal":"The iteration share of the test count: tests written only to reach the gate after measuring.","how":"Final passing tests minus the tests at the first mutation run (codeMetrics.gate.testsAtFirstMutation)."},{"id":"mutationRounds","group":"gate","label":"Mutation survivor rounds","unit":"count","dir":"lower","goal":"How often the first full mutation run was not enough. 0 = the tests written before measuring already met the gate. Exposes first-pass luck.","how":"Sum of codeMetrics.gate.mutationRounds over the components."},{"id":"gateOvershoot","group":"gate","label":"Gate overshoot (points)","unit":"count","dir":"lower","goal":"Quality above the threshold is not needed and cost money. Average points above the threshold over the criteria that passed. Lower means the run stopped at the gate.","how":"Mean of value minus threshold over passed coverage and mutation criteria."},{"id":"gateShortfall","group":"gate","label":"Gate shortfall (points)","unit":"count","dir":"target","target":0,"goal":"How far the run is below the thresholds, summed over the coverage and mutation criteria it missed. Target: zero.","how":"Sum of threshold minus value for each missed criterion."},{"id":"gateMet","group":"gate","label":"Quality gate met","unit":"yesno","dir":"target","target":1,"headline":true,"goal":"All runs of a setup must reach the same quality: line coverage and adjusted mutation score at or above the thresholds per component, final run green, no open Critical or High finding. A run that misses it is not comparable.","how":"Computed from the run's coverage, adjusted mutation score, final run and open findings against the thresholds of quality-requirements.md (history: the thresholds set in the config, applied afterwards)."},{"id":"costToGate","group":"gate","label":"Cost to reach the gate ($)","unit":"usd","dir":"lower","headline":true,"goal":"The objective. What the run cost, human waiting excluded, to deliver a result that meets the quality gate. Shown only when the gate was met: a run below the gate did not deliver the same quality and cannot be compared.","how":"Cost excl. waits, only when every gate criterion that could be assessed passed."},{"id":"agentMin","group":"time","label":"Agent time","unit":"min","dir":"lower","headline":true,"goal":"What the workflow itself needs in minutes, with every wait for a human removed. The main time figure.","how":"Sum over phases of phase wall time minus recorded waits and idle gaps above 10 minutes. Gaps between phases are dropped."},{"id":"humanWaitMin","group":"time","label":"Human wait (excluded)","unit":"min","dir":"lower","goal":"Not a property of the workflow but of how the run was operated. Lower means fewer blockers. It is removed from every other number.","how":"Recorded humanInterventions plus idle gaps above 10 minutes in the transcript, inside phases."},{"id":"waitsOver60","group":"time","label":"Waits over 1 hour","unit":"count","dir":"target","target":0,"goal":"Each one lets the 1-hour prompt cache expire and costs a full-context rewrite. Target: none.","how":"Waits longer than 60 minutes, including gaps between phases."},{"id":"modelMin","group":"time","label":"Model time","unit":"min","dir":"lower","goal":"Time the model spends generating. It falls with fewer, shorter calls.","how":"Transcript gaps that end in an assistant message (needs the transcript)."},{"id":"toolMin","group":"time","label":"Tool time","unit":"min","dir":"lower","goal":"Time in builds, test runs and scanners. Shows what to speed up, parallelise or run less often.","how":"Transcript gaps that end in a tool result, without questions to the human (needs the transcript)."},{"id":"overheadMin","group":"time","label":"Overhead phases (0, 1, 2, 7)","unit":"min","dir":"lower","goal":"Preflight, requirements, design and release. Setup work that does not build or test the product; lower is better.","how":"Agent minutes in phases 0, 1, 2 and 7."},{"id":"coreMin","group":"time","label":"Build, test, verify (4 to 6)","unit":"min","dir":"info","goal":"Where the product is made and checked. More here can mean more quality (see mutation score), so it is context, not a target.","how":"Agent minutes in phases 4, 5 and 6."},{"id":"agentMinPerTest","group":"time","label":"Agent minutes per passing test","unit":"min2","dir":"info","goal":"Not a goal: dividing by the test count would reward writing more tests. Shown for context only.","how":"Agent time divided by the final passing test count."},{"id":"costExcl","group":"cost","label":"Cost excl. waits","unit":"usd","dir":"lower","headline":true,"goal":"Dollars at list prices without the cache rebuilds that waits caused. The comparison figure for cost.","how":"Tokens times list prices, minus the extra of each cache write above 150k tokens that followed a wait over an hour."},{"id":"costLogged","group":"cost","label":"Cost as logged","unit":"usd","dir":"info","goal":"What the run actually cost. Higher than the line above only when waits caused cache rebuilds.","how":"Tokens times list prices (usage.costUsd); the run-log's own figure where no transcript exists."},{"id":"rebuildCost","group":"cost","label":"Cache rebuilds caused by waits","unit":"usd","dir":"target","target":0,"goal":"Money lost to idling past the cache lifetime. Target: zero.","how":"Cost as logged minus cost excl. waits. Estimated from excess cache-write tokens where no transcript exists."},{"id":"costPerTest","group":"cost","label":"Cost per passing test","unit":"usd3","dir":"info","goal":"Not a goal: dividing by the test count would reward writing more tests. Shown for context only.","how":"Cost excl. waits divided by the final passing test count."},{"id":"modelCalls","group":"cost","label":"Model calls","unit":"count","dir":"lower","goal":"Every call re-reads the whole context, so fewer calls is the surest way to lower cost.","how":"Distinct assistant messages in the transcript."},{"id":"toolCalls","group":"cost","label":"Tool calls","unit":"count","dir":"lower","goal":"Fewer, larger steps cost less. Many Edit calls point to rework.","how":"Tool-use entries in the transcript (or the count in the log)."},{"id":"toolErrorPct","group":"cost","label":"Tool calls that failed","unit":"pct","dir":"lower","goal":"Failed calls are wasted calls and context.","how":"Tool results with is_error divided by tool calls."},{"id":"outputTokens","group":"cost","label":"Output tokens","unit":"k","dir":"lower","goal":"What the model wrote, including thinking. Output costs five times the price of uncached input.","how":"Sum over calls."},{"id":"avgContext","group":"cost","label":"Average context per call","unit":"k","dir":"lower","goal":"The main cost driver: each call re-reads all of it at cache-read price. Starting a fresh context per phase lowers it.","how":"Input plus cache read plus cache write tokens per call, averaged."},{"id":"peakContext","group":"cost","label":"Peak context","unit":"k","dir":"lower","goal":"How large the context got before the end.","how":"Largest context of any call."},{"id":"pctOver150k","group":"cost","label":"Calls above 150k context","unit":"pct","dir":"lower","goal":"Long contexts are expensive; this is the share of calls in that range.","how":"Calls with more than 150k context tokens divided by all calls."},{"id":"blocking","group":"flow","label":"Blocking decisions","unit":"count","dir":"lower","goal":"Each one stops the run for a human. Answers that recur across runs can be given in advance in the inputs.","how":"Decision records of type blocking."},{"id":"interventions","group":"flow","label":"Human interventions","unit":"count","dir":"lower","goal":"How often the human had to act or answer.","how":"Entries in humanInterventions."},{"id":"approvalPrompts","group":"flow","label":"Approval prompts","unit":"count","dir":"lower","goal":"How often the human had to approve a tool call; everything else was decided by the permission mode or the classifier.","how":"Permission decisions in the transcript whose source is not the configuration."},{"id":"decisions","group":"flow","label":"Decision records","unit":"count","dir":"info","goal":"All decisions, blocking or not. A high count with few blocking ones means the agent decides well on its own.","how":"Entries in decisions."},{"id":"fixLoops","group":"flow","label":"Fix loops","unit":"count","dir":"info","goal":"Rework found in verification. The count alone says little: the same work done earlier shows up as time instead.","how":"Entries in fixLoops."},{"id":"loopMin","group":"flow","label":"Fix loop minutes","unit":"min","dir":"lower","goal":"What rework actually cost in time. Short loops that fix template-avoidable defects are cheap but still avoidable.","how":"Sum of end minus start over fix loops that record both."},{"id":"loopsNeedHuman","group":"flow","label":"Fix loops that needed a human","unit":"count","dir":"target","target":0,"goal":"A loop that waits for a human is the expensive kind. Target: none.","how":"fixLoops with needsHuman true (schema 2 logs only)."},{"id":"frozenChanges","group":"flow","label":"Frozen-test changes","unit":"count","dir":"lower","goal":"Each change to a frozen acceptance test needed a human. Fewer means better requirements and test design.","how":"acceptanceCriteria.frozenTestChanges, or the decisions that approved a manifest change."},{"id":"divergences","group":"flow","label":"Deviations from the process","unit":"count","dir":"target","target":0,"goal":"Every departure from the rules makes the run less comparable. Target: none.","how":"Entries in divergences (blank when the log has no such field)."},{"id":"finalTests","group":"quality","label":"Passing tests (final run)","unit":"count","dir":"info","goal":"A cost driver, not a quality measure: the number of tests the run needed to reach the quality gate. More tests are not better and fewer are not better; compare quality by the gate and cost by the cost rows.","how":"finalTestRun.passed, all levels."},{"id":"finalFailed","group":"quality","label":"Failing tests (final run)","unit":"count","dir":"target","target":0,"goal":"The run must end green.","how":"finalTestRun.failed."},{"id":"oracleRegression","group":"quality","label":"Hidden oracle: base project scenarios passed","unit":"pct","dir":"higher","goal":"The base project still works as specified, judged by checks the agent never saw. In a brownfield run a drop means the change broke existing behaviour.","how":"results/oracle/oracle-summary.json, regression R01-R15 (feature experiment oracle): passed of total; empty when the oracle was not run."},{"id":"oracleFeature","group":"quality","label":"Hidden oracle: feature scenarios passed","unit":"pct","dir":"higher","goal":"The feature works as specified, judged by checks the agent never saw; the same scenarios for greenfield and brownfield runs of a feature.","how":"results/oracle/oracle-summary.json, feature scenarios (search S01-S10, group G01-G11): passed of total; empty for normal runs and when the oracle was not run."},{"id":"firstFailed","group":"quality","label":"Failing tests (first run)","unit":"count","dir":"lower","goal":"Defects that reached the first full run. Lower means the build phase was cleaner.","how":"firstTestRun.failed (a run that did not compile is blank)."},{"id":"findingsTotal","group":"quality","label":"Findings as found","unit":"count","dir":"lower","goal":"Issues the verification phase had to deal with.","how":"Sum of findings by severity."},{"id":"critHigh","group":"quality","label":"Critical and High as found","unit":"count","dir":"lower","goal":"The serious ones. Some are false positives, so read them with the findings table.","how":"findings.critical + findings.high."},{"id":"openCritHigh","group":"quality","label":"Critical and High open at end","unit":"count","dir":"target","target":0,"goal":"The run may not finish with one open.","how":"openAtEnd.critical + openAtEnd.high (blank when not recorded)."},{"id":"mutBackend","group":"quality","label":"Mutation score, backend (raw)","unit":"pct","dir":"info","goal":"Killed mutants over all mutants, with the project's scope. Context: the gate uses the adjusted score. Comparable only for the same scope (see notes).","how":"From codeMetrics or the run summary, with scope."},{"id":"mutFrontend","group":"quality","label":"Mutation score, frontend (raw)","unit":"pct","dir":"info","goal":"Killed mutants over all mutants, with the project's scope. Context: the gate uses the adjusted score. Comparable only for the same scope (see notes).","how":"From codeMetrics or the run summary."},{"id":"covBackend","group":"quality","label":"Line coverage, backend","unit":"pct","dir":"higher","goal":"Share of backend code the tests run, all levels together. Part of the quality gate.","how":"From codeMetrics or the run summary."},{"id":"covFrontend","group":"quality","label":"Line coverage, frontend","unit":"pct","dir":"higher","goal":"Share of frontend code the tests run, all levels together. Part of the quality gate.","how":"From codeMetrics or the run summary."},{"id":"commitCount","group":"commits","label":"Commits","unit":"count","dir":"info","goal":"How the work was cut into steps. Compare with the units in phases.md: about one commit per story, document, layer or fix.","how":"Commits between the start and final commit of the run (git log)."},{"id":"commitLinesMedian","group":"commits","label":"Changed lines per commit (median)","unit":"count","dir":"info","goal":"Typical step size. The guide is small, finished steps: well below 400. A median of 1 to 5 means noise, a median near 400 means batching.","how":"Added plus deleted lines, without logs, lock files and generated or build folders."},{"id":"commitLinesMax","group":"commits","label":"Largest commit (changed lines)","unit":"count","dir":"lower","goal":"The commit that hurts review most. The guide allows about 400 changed lines or 15 files.","how":"Largest commit by changed lines, same counting as above."},{"id":"commitPctOversize","group":"commits","label":"Commits over the size guide","unit":"pct","dir":"target","target":0,"goal":"Share of commits above 15 files or 400 changed lines (working-rules.md). Target: none without a stated reason.","how":"Commits over the guide divided by all commits."},{"id":"commitPctMixed","group":"commits","label":"Commits that mix concerns","unit":"pct","dir":"target","target":0,"goal":"Code, tests, documents and build or dependency changes belong in separate commits (working-rules.md). Target: none.","how":"Commits whose changed files fall into more than one of code, test, docs, build."},{"id":"commitPctMessageOk","group":"commits","label":"Commits with a correct message","unit":"pct","dir":"higher","goal":"Format `<type>: <summary> (IDs)` with a known type and at most 72 characters. Target: 100.","how":"Subjects that match the format divided by all commits."},{"id":"commitPctBurst","group":"commits","label":"Commits made within a minute of the previous one","unit":"pct","dir":"lower","goal":"Several commits created in one burst usually mean work was batched and committed together, not committed when finished. Lower is better.","how":"Commits less than 60 seconds after the previous commit."},{"id":"commitCostMedian","group":"commits","label":"Cost between commits (median)","unit":"usd","dir":"info","goal":"How much model work piles up before a commit. Small steady steps are cheaper to review and to undo; 0 means the commit came in a burst.","how":"Cost of the model calls between the previous commit and this one (needs the transcript)."},{"id":"commitActiveMinMedian","group":"commits","label":"Minutes between commits (median, waits removed)","unit":"min","dir":"info","goal":"Rhythm of the work. Very long gaps mean big batches, near zero means bursts.","how":"Time since the previous commit minus waits for a human."},{"id":"commitCostPer100Lines","group":"commits","label":"Cost per 100 committed lines","unit":"usd","dir":"lower","goal":"Cost efficiency of the code and documents that reach the repository.","how":"Cost between commits divided by committed lines, times 100."},{"id":"subagentCost","group":"checks","label":"Cost of sub-agents","unit":"usd","dir":"info","goal":"Work done by sub-agents. Included in the cost above; shown so it is not a surprise.","how":"Calls found in the sub-agent transcripts that sit next to the session file."},{"id":"phaseHelperPct","group":"checks","label":"Phase timestamps written with the clock tool","unit":"pct","dir":"higher","goal":"Phase boundaries written by tools/stat.mjs carry the real time; typed ones can be estimates. Target: 100.","how":"Boundaries in run-log.json that match a stat.mjs call in the transcript, within two minutes."},{"id":"unrecordedIdleMin","group":"checks","label":"Idle time missing from the log","unit":"min","dir":"target","target":0,"goal":"Waiting found in the transcript that humanInterventions does not record. Target: none.","how":"Transcript gaps above 10 minutes not covered by a recorded intervention."},{"id":"ac","group":"size","label":"Acceptance criteria","unit":"count","dir":"info","goal":"How much behaviour was specified. Context for test counts.","how":"acceptanceCriteria.total or the criteria document."},{"id":"prodLoc","group":"size","label":"Production lines","unit":"count","dir":"info","goal":"Size of the product. Cost and time should scale with it, not with process overhead.","how":"cloc, backend plus frontend."},{"id":"testLoc","group":"size","label":"Test lines","unit":"count","dir":"info","goal":"Size of the test code. A cost driver, not a quality measure.","how":"cloc, backend plus frontend."},{"id":"testRatio","group":"size","label":"Test to production lines","unit":"ratio","dir":"info","goal":"Test lines per production line. A cost driver, not a quality measure.","how":"Test lines divided by production lines."},{"id":"testsPer1000Loc","group":"size","label":"Tests per 1000 production lines","unit":"count","dir":"info","goal":"Size of the suite relative to the product, a cost driver.","how":"Final passing tests divided by production lines, times 1000."},{"id":"unitTests","group":"size","label":"Unit tests (final run)","unit":"count","dir":"info","goal":"Unit tests needed to reach the gate. Acceptance and end-to-end tests are fixed by the inputs.","how":"finalTestRun.byLevel.unit."},{"id":"e2eTests","group":"size","label":"End-to-end tests (final run)","unit":"count","dir":"info","goal":"Fixed by the scenario list of the inputs; a different number means the scenarios were split or added.","how":"finalTestRun.byLevel.e2e."}]},"runs":[{"label":"tjan_single-agent_matt-workflow_contacts_run-1","series":"normal","template":"mattpocock-skills 1.3.1 (implement)","start":"2026-11-02T19:48:16Z","end":"2026-11-02T23:39:31Z","wallMin":231.3,"metrics":{"agentMin":{"v":87,"src":"t","note":null},"humanWaitMin":{"v":144.3,"src":"t","note":"71.1 min of idle time was not recorded in the log"},"waitsOver60":{"v":1,"src":"t","note":null},"modelMin":{"v":60.1,"src":"t","note":null},"toolMin":{"v":35.2,"src":"t","note":null},"overheadMin":{"v":null,"src":null,"note":null},"coreMin":{"v":null,"src":null,"note":null},"agentMinPerTest":{"v":0.28,"src":"t","note":null},"costExcl":{"v":32.36,"src":"t","note":null},"costLogged":{"v":32.36,"src":"t","note":null},"rebuildCost":{"v":0,"src":"t","note":null},"costPerTest":{"v":0.102,"src":"t","note":null},"modelCalls":{"v":280,"src":"t","note":null},"toolCalls":{"v":274,"src":"t","note":null},"toolErrorPct":{"v":3.3,"src":"t","note":null},"outputTokens":{"v":441.2,"src":"t","note":null},"avgContext":{"v":350.4,"src":"t","note":null},"peakContext":{"v":640.6,"src":"t","note":null},"pctOver150k":{"v":83.1,"src":"t","note":null},"subagentCost":{"v":1.68,"src":"t","note":"2 sub-agent call(s)"},"unrecordedIdleMin":{"v":71.1,"src":"t","note":null},"approvalPrompts":{"v":1,"src":"t","note":"272 of 273 permission decisions were made by the mode or classifier"},"phaseHelperPct":{"v":0,"src":"t","note":"issues: some phases have no start or end"},"commitCount":{"v":18,"src":"l","note":null},"commitLinesMedian":{"v":395.5,"src":"l","note":null},"commitLinesMax":{"v":4647,"src":"l","note":null},"commitPctOversize":{"v":44.4,"src":"l","note":null},"commitPctMixed":{"v":72.2,"src":"l","note":null},"commitPctMessageOk":{"v":0,"src":"l","note":null},"commitPctBurst":{"v":5.6,"src":"l","note":null},"commitCostMedian":{"v":0.96,"src":"t","note":null},"commitActiveMinMedian":{"v":3.3,"src":"t","note":null},"commitCostPer100Lines":{"v":0.23,"src":"t","note":null},"blocking":{"v":2,"src":"l","note":null},"oracleRegression":{"v":15.6,"src":"o","note":"5 of 32; failed R04, R05, R12, R13, R32"},"oracleFeature":{"v":null,"src":null,"note":null},"interventions":{"v":2,"src":"l","note":null},"decisions":{"v":7,"src":"l","note":null},"fixLoops":{"v":5,"src":"l","note":null},"loopMin":{"v":null,"src":null,"note":"some loops lack start or end"},"loopsNeedHuman":{"v":0,"src":"l","note":null},"frozenChanges":{"v":0,"src":"l","note":null},"divergences":{"v":0,"src":"l","note":null},"finalTests":{"v":316,"src":"l","note":null},"finalFailed":{"v":0,"src":"l","note":null},"firstFailed":{"v":null,"src":null,"note":null},"findingsTotal":{"v":10,"src":"l","note":null},"critHigh":{"v":0,"src":"l","note":null},"openCritHigh":{"v":0,"src":"l","note":null},"mutBackend":{"v":94.8,"src":"l","note":"si.contacts.* (PIT 1.30.0), 596 killed of 629; no survivor judged equivalent"},"mutFrontend":{"v":93.77,"src":"l","note":"src/** (Stryker 10.0.0), 1,746 killed of 1,862; no survivor judged equivalent"},"covBackend":{"v":99.5,"src":"l","note":null},"covFrontend":{"v":100,"src":"l","note":null},"ac":{"v":null,"src":null,"note":null},"prodLoc":{"v":5011,"src":"l","note":null},"testLoc":{"v":5582,"src":"l","note":null},"testRatio":{"v":1.11,"src":"l","note":null},"testsPer1000Loc":{"v":63.1,"src":"l","note":null},"unitTests":{"v":45,"src":"l","note":null},"e2eTests":{"v":7,"src":"l","note":null},"mutAdjBackend":{"v":94.8,"src":"l","note":null},"mutAdjFrontend":{"v":93.77,"src":"l","note":null},"mutationRounds":{"v":6,"src":"l","note":null},"testsAfterFirstMutation":{"v":null,"src":null,"note":null},"gateMet":{"v":1,"src":"l","note":null},"gateShortfall":{"v":0,"src":"l","note":null},"gateOvershoot":{"v":4.5,"src":"l","note":null},"costToGate":{"v":32.36,"src":"t","note":null}},"phases":[{"phase":0,"name":"preflight-and-bootstrap","agentMin":3,"waitMin":1.6,"modelMin":2.2,"toolMin":0.8,"costUsd":0.91,"avgContextK":63},{"phase":4,"name":"build","agentMin":48.2,"waitMin":0,"modelMin":31.9,"toolMin":16.3,"costUsd":12.24,"avgContextK":235},{"phase":6,"name":"verify","agentMin":35.8,"waitMin":142.7,"modelMin":26,"toolMin":18.1,"costUsd":19.21,"avgContextK":494}],"sources":{"time":"transcript and run-log","usage":"transcript"},"flags":[],"notes":["2 sub-agent transcript(s) counted","29 model call(s) after the run's end (the session went on) cost $1.78: not part of the run"],"longWaits":[{"min":71.6,"reason":"Post-run operator turns between dead015 and the follow-up request (push, questions about the tickets, closing #2-#14, setting up these statistics and the oracle run); not implementation work, so excluded from agent time","source":"run-log","cause":"other"}],"rebuilds":[],"toolTime":{"git":{"calls":22,"minutes":0.3},"Shell and file inspection":{"calls":48,"minutes":0.4},"Backend build and test":{"calls":18,"minutes":4.5},"Docker build/run":{"calls":14,"minutes":4},"End-to-end tests":{"calls":34,"minutes":10.3},"curl/sleep":{"calls":2,"minutes":0},"Mutation testing":{"calls":56,"minutes":21.4},"Frontend build and test":{"calls":33,"minutes":5.6},"Other analysis tools":{"calls":1,"minutes":0.1}},"tokens":{"out":441165,"cr":88700569,"cw":793911,"inp":588},"environment":{"operator":"tjan","machine":"tjan-linux","plan":null,"permissionMode":"auto","os":{"platform":"linux","release":"7.0.0-38-generic","arch":"x64"},"shell":"/usr/bin/zsh","timezone":"Europe/Ljubljana","utcOffsetMin":60,"tools":{"node":"v18.19.1","npm":"9.2.0","git":"git version 2.43.0","docker":"Docker version 29.5.0, build 98f1464","java":"openjdk version \"21.0.12.1\" 2026-08-18","maven":null,"python":"Python 3.12.3"},"capturedAt":"2026-11-03T10:20:14.266Z","host":{"hostname":"tk","account":"tjan-kazar","cpuModel":"Intel(R) Core(TM) i5-9300H CPU @ 2.40GHz","cpus":8,"memoryGb":31,"workingDir":"/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow"},"harness":{"name":"claude-code","versions":["2.1.316"],"entrypoints":["cli"]},"models":["claude-opus-5-5"],"effort":["medium"],"perTurnEffort":["medium"],"advisorModels":["claude-opus-5-5"],"permissionModes":["auto"],"gitBranches":["main"],"workingDirs":["/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow","/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow/backend","/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow/backend/src/test/java/si/contacts/support","/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow/backend/src/test/java/si/contacts/acceptance","/home/tjan-kazar/storage/Work/lab/agentic_lab/matt_workflow/backend/src/main/java/si/contacts/web"],"userTypes":["external"],"permissionDecisions":{"total":273,"byHuman":1,"rejected":2},"postRunHost":{"platform":"linux","release":"7.0.0-38-generic","arch":"x64","cpus":8,"memoryGb":31,"nodeVersion":"v18.19.1","timezone":"Europe/Ljubljana"}},"phaseChecks":{"viaHelper":0,"manual":6,"issues":["some phases have no start or end"]},"subagents":{"used":2,"transcripts":2,"modelCalls":31,"costUsd":1.68,"outputTokens":17191},"commitSummary":{"count":18,"byPhase":{"4":12,"6":6},"byType":{"other":18},"linesMedian":395.5,"linesP90":1939,"linesMax":4647,"filesMedian":6.5,"pctOversize":44.4,"pctMixed":72.2,"pctTiny":0,"pctBurst":5.6,"pctMessageOk":0,"pctWithIds":null,"costPerCommitMedian":0.96,"costPerCommitMean":1.79,"activeMinPerCommitMedian":3.3,"activeMinPerCommitMean":4.8,"longestActiveGapMin":23.2,"costPer100Lines":0.23,"costAfterLastCommitUsd":0.15,"statsOnlyCommitsLeftOut":0,"range":"96fb6d77d0b4ab4677f1dc581d9c5dd4813f126e..d31b024e0f6c9d504978ac23c46a5bcabb96cb74"},"commits":[{"hash":"d13ae39","time":"2026-11-02T20:52:51+01:00","phase":4,"subject":"Add agent docs, glossary and ADR as received","type":null,"files":6,"lines":234,"linesAll":234,"categories":{"docs":234},"mixed":false,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":4.6,"activeMinutesSincePrev":3,"modelCalls":18,"outputTokens":13135,"costUsdSincePrev":0.91},{"hash":"0db3dd2","time":"2026-11-02T21:08:15+01:00","phase":4,"subject":"Walking skeleton, Members and Roles (#2, #3)","type":null,"files":93,"lines":4647,"linesAll":8799,"categories":{"docs":276,"code":2618,"build":710,"test":1043},"mixed":true,"oversize":true,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":15.4,"activeMinutesSincePrev":15.4,"modelCalls":33,"outputTokens":93044,"costUsdSincePrev":3.52},{"hash":"8661851","time":"2026-11-02T21:14:19+01:00","phase":4,"subject":"Contacts with Predefined fields, Revisions and version checks (#4)","type":null,"files":24,"lines":1939,"linesAll":1939,"categories":{"code":1676,"test":263},"mixed":true,"oversize":true,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":6.1,"activeMinutesSincePrev":6.1,"modelCalls":11,"outputTokens":42590,"costUsdSincePrev":1.65},{"hash":"5a0042c","time":"2026-11-02T21:15:26+01:00","phase":4,"subject":"Attributes on Contacts (#5)","type":null,"files":2,"lines":157,"linesAll":157,"categories":{"test":157},"mixed":false,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":1.1,"activeMinutesSincePrev":1.1,"modelCalls":3,"outputTokens":4677,"costUsdSincePrev":0.26},{"hash":"bf0e678","time":"2026-11-02T21:19:21+01:00","phase":4,"subject":"Tags (#6)","type":null,"files":10,"lines":616,"linesAll":616,"categories":{"code":285,"test":331},"mixed":true,"oversize":true,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":3.9,"activeMinutesSincePrev":3.9,"modelCalls":12,"outputTokens":17875,"costUsdSincePrev":1.12},{"hash":"61924ee","time":"2026-11-02T21:21:30+01:00","phase":4,"subject":"Search, filter, sort and paging (#7)","type":null,"files":5,"lines":505,"linesAll":505,"categories":{"test":221,"code":284},"mixed":true,"oversize":true,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":2.2,"activeMinutesSincePrev":2.2,"modelCalls":6,"outputTokens":12276,"costUsdSincePrev":0.66},{"hash":"294d083","time":"2026-11-02T21:24:13+01:00","phase":4,"subject":"Revision history and Restore (#8)","type":null,"files":6,"lines":397,"linesAll":397,"categories":{"test":245,"code":152},"mixed":true,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":2.7,"activeMinutesSincePrev":2.7,"modelCalls":6,"outputTokens":11764,"costUsdSincePrev":0.66},{"hash":"152e3ac","time":"2026-11-02T21:25:55+01:00","phase":4,"subject":"Duplicate detection and save-time warning (#9)","type":null,"files":9,"lines":394,"linesAll":394,"categories":{"code":227,"test":165,"docs":2},"mixed":true,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":1.7,"activeMinutesSincePrev":1.7,"modelCalls":3,"outputTokens":9787,"costUsdSincePrev":0.42},{"hash":"5d84145","time":"2026-11-02T21:29:24+01:00","phase":4,"subject":"Merge (#10)","type":null,"files":5,"lines":608,"linesAll":608,"categories":{"code":359,"test":249},"mixed":true,"oversize":true,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":3.5,"activeMinutesSincePrev":3.5,"modelCalls":7,"outputTokens":16221,"costUsdSincePrev":0.89},{"hash":"c9a7153","time":"2026-11-02T21:33:11+01:00","phase":4,"subject":"Excel Export (#11)","type":null,"files":10,"lines":506,"linesAll":506,"categories":{"code":200,"test":304,"docs":2},"mixed":true,"oversize":true,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":3.8,"activeMinutesSincePrev":3.8,"modelCalls":9,"outputTokens":14807,"costUsdSincePrev":1},{"hash":"33ac52b","time":"2026-11-02T21:34:10+01:00","phase":4,"subject":"Permanent erasure and Workspace deletion (#12)","type":null,"files":2,"lines":133,"linesAll":133,"categories":{"test":133},"mixed":false,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":true,"minutesSincePrev":1,"activeMinutesSincePrev":1,"modelCalls":4,"outputTokens":5175,"costUsdSincePrev":0.41},{"hash":"3861bea","time":"2026-11-02T21:36:09+01:00","phase":4,"subject":"Isolation audit and Viewer journey (#13)","type":null,"files":4,"lines":269,"linesAll":269,"categories":{"test":269},"mixed":false,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":2,"activeMinutesSincePrev":2,"modelCalls":4,"outputTokens":9383,"costUsdSincePrev":0.53},{"hash":"12cbc14","time":"2026-11-02T21:41:02+01:00","phase":6,"subject":"Scale and accessibility (#14)","type":null,"files":7,"lines":305,"linesAll":305,"categories":{"docs":70,"code":201,"test":34},"mixed":true,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":4.9,"activeMinutesSincePrev":4.9,"modelCalls":10,"outputTokens":13179,"costUsdSincePrev":1.1},{"hash":"dead015","time":"2026-11-02T21:44:45+01:00","phase":6,"subject":"Address code review findings","type":null,"files":6,"lines":31,"linesAll":31,"categories":{"code":26,"test":5},"mixed":true,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":3.7,"activeMinutesSincePrev":3.7,"modelCalls":38,"outputTokens":22184,"costUsdSincePrev":2.4},{"hash":"493d3bf","time":"2026-11-02T22:58:29+01:00","phase":6,"subject":"Close spec #1 gaps: 404 before body, failed sign-in limit, all duplicates","type":null,"files":11,"lines":160,"linesAll":160,"categories":{"code":105,"test":51,"docs":4},"mixed":true,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":73.7,"activeMinutesSincePrev":2.2,"modelCalls":44,"outputTokens":37441,"costUsdSincePrev":5.02},{"hash":"937ed05","time":"2026-11-02T23:01:57+01:00","phase":6,"subject":"Backend acceptance tests use tokens from the Firebase Auth Emulator","type":null,"files":5,"lines":129,"linesAll":129,"categories":{"test":129},"mixed":false,"oversize":false,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":3.5,"activeMinutesSincePrev":3.5,"modelCalls":3,"outputTokens":5365,"costUsdSincePrev":0.44},{"hash":"7e8dbd7","time":"2026-11-02T23:59:41+01:00","phase":6,"subject":"Backend quality gate: line coverage 99.5 %, mutation score 95 %","type":null,"files":28,"lines":1080,"linesAll":1080,"categories":{"build":62,"code":123,"test":895},"mixed":true,"oversize":true,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":57.7,"activeMinutesSincePrev":23.2,"modelCalls":55,"outputTokens":105685,"costUsdSincePrev":9.31},{"hash":"d31b024","time":"2026-11-03T00:39:20+01:00","phase":6,"subject":"Frontend quality gate: line coverage 100 %, mutation score 93.8 %","type":null,"files":22,"lines":1935,"linesAll":4846,"categories":{"docs":8,"code":123,"build":20,"test":1784},"mixed":true,"oversize":true,"tiny":false,"messageOk":false,"ids":[],"idsExpected":false,"burst":false,"minutesSincePrev":39.7,"activeMinutesSincePrev":3,"modelCalls":13,"outputTokens":5622,"costUsdSincePrev":1.89}],"gate":{"thresholds":{"lineCoverage":95,"mutationScore":90},"source":"run-log","appliedLater":false,"items":[{"id":"covBackend","label":"Backend line coverage","value":99.5,"threshold":95,"unit":"%","pass":true,"shortfall":0},{"id":"covFrontend","label":"Frontend line coverage","value":100,"threshold":95,"unit":"%","pass":true,"shortfall":0},{"id":"mutAdjBackend","label":"Backend mutation score (adjusted)","value":94.8,"threshold":90,"unit":"%","pass":true,"shortfall":0},{"id":"mutAdjFrontend","label":"Frontend mutation score (adjusted)","value":93.77,"threshold":90,"unit":"%","pass":true,"shortfall":0},{"id":"allGreen","label":"Final run all green","value":0,"threshold":0,"unit":"failing","pass":true,"shortfall":null},{"id":"openCritHigh","label":"No open Critical or High finding","value":0,"threshold":0,"unit":"open","pass":true,"shortfall":null}],"met":true,"unknown":0,"shortfall":0,"overshoot":4.5}}],"setups":[{"template":"mattpocock-skills 1.3.1 (implement)","n":1,"labels":["tjan_single-agent_matt-workflow_contacts_run-1"],"operators":["tjan"],"gatePassing":1,"stats":{"agentMin":{"n":1,"median":87,"min":87,"max":87},"costExcl":{"n":1,"median":32.36,"min":32.36,"max":32.36},"costToGate":{"n":1,"median":32.36,"min":32.36,"max":32.36},"toolCalls":{"n":1,"median":274,"min":274,"max":274},"modelCalls":{"n":1,"median":280,"min":280,"max":280},"avgContext":{"n":1,"median":350.4,"min":350.4,"max":350.4},"blocking":{"n":1,"median":2,"min":2,"max":2},"fixLoops":{"n":1,"median":5,"min":5,"max":5},"finalTests":{"n":1,"median":316,"min":316,"max":316},"unitTests":{"n":1,"median":45,"min":45,"max":45},"e2eTests":{"n":1,"median":7,"min":7,"max":7},"mutAdjBackend":{"n":1,"median":94.8,"min":94.8,"max":94.8},"mutAdjFrontend":{"n":1,"median":93.77,"min":93.77,"max":93.77},"covBackend":{"n":1,"median":99.5,"min":99.5,"max":99.5},"covFrontend":{"n":1,"median":100,"min":100,"max":100},"mutationRounds":{"n":1,"median":6,"min":6,"max":6},"gateOvershoot":{"n":1,"median":4.5,"min":4.5,"max":4.5},"commitCount":{"n":1,"median":18,"min":18,"max":18},"commitPctOversize":{"n":1,"median":44.4,"min":44.4,"max":44.4}},"envDiffs":[]}],"excluded":[]};
+const $=id=>document.getElementById(id);
+const ALL=D.runs.map((r,i)=>(r.i=i,r)), C=D.catalog.metrics, G=D.catalog.groups;
+const seriesList=[...new Set(ALL.map(r=>r.series))];
+const col=r=>"var(--s-"+((seriesList.indexOf(r.series)%8)+1)+")";
+const off=new Set();            // indices of hidden runs
+let R=ALL.slice();              // the runs shown
+$("title").textContent=D.title;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sl=(s,n)=>{s=String(s);return s.length>n?s.slice(0,n-1)+"…":s};
+const leftM=rs=>Math.min(210,Math.max(96,Math.round(7*Math.max(0,...rs.map(r=>sl(r.label,30).length))+16)));
+const lab=(r,x,y,anchor)=>`<text x="${x}" y="${y}" text-anchor="${anchor||"end"}"><title>${esc(r.label)}</title>${esc(sl(r.label,30))}</text>`;
+const fmt=(u,v)=>{if(v==null)return "–";
+ switch(u){case"min":return v>=100?Math.round(v).toLocaleString("en-US"):(Math.round(v*10)/10)+"";
+  case"min2":return v.toFixed(2);case"usd":return "$"+v.toFixed(2);case"usd3":return "$"+v.toFixed(3);
+  case"pct":return (Math.round(v*10)/10)+" %";case"k":return Math.round(v)+"k";case"ratio":return v.toFixed(2);case"yesno":return v===1?"yes":v===0?"no":"?";
+  default:return Math.round(v).toLocaleString("en-US")}};
+const arrow={lower:"↓",higher:"↑",target:"=",info:"i"};
+const val=(r,id)=>r.metrics[id]||{v:null};
+const MARK={e:["†","estimated"],o:["‡","from another file"]};
+const maxOf=(xs,d)=>{xs=xs.filter(v=>v!=null&&isFinite(v));return xs.length?Math.max(...xs):d};
+
+// --- tables: fixed column widths, so a value never sits in a wide, mostly empty cell
+const runTh=r=>`<th title="${esc(r.label)}"><span class="rn">${esc(r.label)}</span><span class="rt">template ${esc(r.template)}</span><button class="hx" type="button" data-hide="${r.i}" aria-label="Hide ${esc(r.label)}" title="Hide this run">×</button></th>`;
+// the table fills its panel: first column fixed, the run columns share the rest
+function table(id,firstHead,rows,opts){const o=Object.assign({attrW:300},opts||{});const el=$(id);
+ if(!R.length){el.innerHTML="";return}
+ el.style.minWidth=(o.attrW+R.length*130)+"px";
+ el.innerHTML=`<colgroup><col style="width:${o.attrW}px">${R.map(()=>"<col>").join("")}</colgroup><thead><tr><th class="fh">${firstHead}</th>${R.map(runTh).join("")}</tr></thead><tbody>${rows.join("")}</tbody>`}
+const grpRow=t=>`<tr class="grp"><td colspan="${R.length+1}">${esc(t)}</td></tr>`;
+const textRow=(n,f,cls)=>`<tr><td>${esc(n)}</td>${R.map(r=>{const x=f(r);const c=x&&typeof x==="object"?x:{t:x};return `<td class="txt ${c.cls||cls||""}"${c.title?` title="${esc(c.title)}"`:""}>${esc(c.t==null||c.t===""?"–":c.t)}</td>`}).join("")}</tr>`;
+
+// --- toolbar
+function chips(){$("chips").innerHTML=ALL.map(r=>`<button class="chip" type="button" data-run="${r.i}" aria-pressed="${!off.has(r.i)}" title="${esc(r.label)} (template ${esc(r.template)}): click to ${off.has(r.i)?"show":"hide"}"><i style="background:${col(r)}"></i>${esc(r.label)}</button>`).join("")}
+document.addEventListener("click",e=>{const c=e.target.closest("[data-run]"),h=e.target.closest("[data-hide]");
+ if(c){const i=+c.dataset.run;if(off.has(i))off.delete(i);else if(off.size<ALL.length-1)off.add(i);else return}
+ else if(h){if(off.size<ALL.length-1)off.add(+h.dataset.hide);else return}
+ else return;
+ render()});
+$("bAll").onclick=()=>{off.clear();render()};
+$("bGate").onclick=()=>{const ok=ALL.filter(r=>val(r,"gateMet").v===1);if(!ok.length)return;off.clear();ALL.forEach(r=>{if(!ok.includes(r))off.add(r.i)});render()};
+$("onlyDiff").onchange=()=>render();
+
+// --- topic tables, one per group
+const gbox=$("groups");
+gbox.innerHTML=G.map(g=>`<details class="panel" open><summary><h2>${esc(g.label)}</h2></summary><div class="body"><div class="scroll"><table id="t_${g.id}"></table></div></div></details>`).join("");
+function groupTables(){const only=$("onlyDiff").checked;
+ for(const g of G){const ms=C.filter(x=>x.group===g.id);const det=$("t_"+g.id).closest("details");const rows=[];
+  for(const m of ms){
+   const vals=R.map(r=>val(r,m.id).v),nn=vals.filter(v=>v!=null);
+   if(only&&(new Set(vals.map(v=>v==null?"-":v)).size<2))continue;
+   let best=null,worst=null;if(new Set(nn).size>1&&m.dir==="lower"){best=Math.min(...nn);worst=Math.max(...nn)}if(new Set(nn).size>1&&m.dir==="higher"){best=Math.max(...nn);worst=Math.min(...nn)}
+   const tgt=m.dir==="target"?m.target:null;
+   const goal=(m.dir==="target"?`Target ${m.target}. `:m.dir==="lower"?"Lower is better. ":m.dir==="higher"?"Higher is better. ":"")+m.goal;
+   rows.push(`<tr><td class="attr" title="${esc(m.how)}"><span class="dir">${arrow[m.dir]}</span><b>${m.label}</b><small>${esc(goal)}</small></td>`+R.map(r=>{
+    const x=val(r,m.id),v=x.v;const cls=v==null?"miss":((best!=null&&v===best)||(tgt!=null&&v===tgt))?"best":(worst!=null&&v===worst)?"warnc":"";
+    const mk=x.src&&MARK[x.src]?`<span class="mark" title="${esc(MARK[x.src][1]+(x.note?": "+x.note:""))}">${MARK[x.src][0]}</span>`:(x.note?`<span class="mark" title="${esc(x.note)}">*</span>`:"");
+    return `<td class="${cls}">${fmt(m.unit,v)}${v!=null?mk:""}</td>`}).join("")+"</tr>")}
+  if(!rows.length){det.hidden=true;continue}det.hidden=false;
+  table("t_"+g.id,"Attribute and what we want",rows,{attrW:360})}}
+
+// --- key figures
+function kpis(){const hl=C.filter(m=>m.headline);
+ $("kpis").innerHTML=hl.map(m=>{const vs=R.map(r=>({r,v:val(r,m.id).v})).filter(x=>x.v!=null);
+  if(!vs.length)return "";
+  if(m.id==="gateMet")return `<div class="kpi"><b>${vs.filter(x=>x.v===1).length} of ${R.length}</b><span>runs met the quality gate; only these are comparable</span></div>`;
+  if(R.length===1)return `<div class="kpi"><b>${fmt(m.unit,vs[0].v)}</b><span>${m.label} ${arrow[m.dir]}</span></div>`;const best=vs.reduce((a,b)=>b.v<a.v?b:a);const worst=vs.reduce((a,b)=>b.v>a.v?b:a);
+  return `<div class="kpi"><b>${fmt(m.unit,best.v)} to ${fmt(m.unit,worst.v)}</b><span>${m.label} ${arrow[m.dir]}, ${vs.length} runs. Lowest: ${esc(best.r.label)}</span></div>`}).join("")+
+  (R.length===1?"":`<div class="kpi"><b>${R.length} runs</b><span>${R.filter(r=>r.sources.usage==="transcript").length} measured from a transcript, ${R.filter(r=>r.sources.usage!=="transcript").length} from logs and summaries</span></div>`)}
+
+// --- quality gate
+function gateTable(){const gs=R.map(r=>r.gate);
+ if(!gs.some(Boolean)){$("secGate").hidden=true;return}$("secGate").hidden=false;
+ const ids=[];gs.forEach(g=>g&&g.items.forEach(i=>{if(!ids.some(x=>x.id===i.id))ids.push({id:i.id,label:i.label,unit:i.unit})}));
+ const g0=gs.find(Boolean);const rows=[];
+ for(const c of ids){rows.push(`<tr><td class="attr"><b>${esc(c.label)}</b><small>${c.unit==="%"?"at or above "+(c.id.startsWith("cov")?g0.thresholds.lineCoverage:g0.thresholds.mutationScore)+" %":c.id==="allGreen"?"no failing test in the final run":"none open at the end"}</small></td>`+R.map(r=>{const g=r.gate,i=g&&g.items.find(x=>x.id===c.id);
+   if(!i)return `<td class="miss">–</td>`;
+   const cls=i.pass==null?"miss":i.pass?"best":"warnc",mark=i.pass==null?"?":i.pass?"✓":"✗";
+   return `<td class="${cls}">${i.value==null?"–":(c.unit==="%"?fmt("pct",i.value):i.value)} ${mark}${i.pass===false&&i.shortfall?`<small>${i.shortfall} points short</small>`:""}</td>`}).join("")+`</tr>`)}
+ rows.push(grpRow("Result"));
+ rows.push(`<tr><td class="attr"><b>Quality gate met</b><small>thresholds: line coverage ${g0.thresholds.lineCoverage} %, adjusted mutation score ${g0.thresholds.mutationScore} %</small></td>`+R.map(r=>{const g=r.gate;if(!g)return `<td class="miss">–</td>`;return `<td class="${g.met===true?"best":g.met===false?"warnc":"miss"}"><b>${g.met===true?"yes":g.met===false?"no":"?"}</b>${g.appliedLater?`<small>applied afterwards</small>`:""}${g.unknown?`<small>${g.unknown} not assessable</small>`:""}</td>`}).join("")+"</tr>");
+ table("gate","Criterion",rows,{attrW:300})}
+
+// --- setups (computed for all runs of the report; the toolbar does not change them)
+(function(){const S=D.setups||[];if(ALL.length<2||!S.length)return;$("secSetups").hidden=false;
+ const mets=["costToGate","costExcl","agentMin","toolCalls","modelCalls","avgContext","blocking","fixLoops","mutationRounds","testsAfterFirstMutation","finalTests","unitTests","e2eTests","mutAdjBackend","mutAdjFrontend","covBackend","covFrontend","gateOvershoot","commitCount","commitPctOversize"].map(id=>C.find(m=>m.id===id)).filter(Boolean);
+ const el=$("setups");el.style.minWidth=(260+S.length*130)+"px";
+ let t=`<colgroup><col style="width:260px">${S.map(()=>"<col>").join("")}</colgroup><thead><tr><th class="fh">Attribute</th>${S.map(s=>`<th><span class="rn">template ${esc(s.template)}</span><span class="rt">${s.n} run${s.n>1?"s":""}${s.operators.length?" · "+esc(s.operators.join(", ")):""} · ${s.gatePassing} met the gate</span></th>`).join("")}</tr></thead><tbody>`;
+ for(const m of mets){if(!S.some(s=>s.stats[m.id]))continue;
+  t+=`<tr><td class="attr"><span class="dir">${arrow[m.dir]}</span><b>${m.label}</b></td>`+S.map((s,j)=>{const x=s.stats[m.id];if(!x)return `<td class="miss">–</td>`;
+   const prev=j>0?S[j-1].stats[m.id]:null;let g="";
+   if(prev&&x.n>1&&prev.n>1){if(x.max<prev.min)g=` <span title="entirely below the range of the previous setup: a real difference">▼</span>`;else if(x.min>prev.max)g=` <span title="entirely above the range of the previous setup: a real difference">▲</span>`}
+   return `<td>${fmt(m.unit,x.median)}${x.n>1?`<small>${fmt(m.unit,x.min)} to ${fmt(m.unit,x.max)}</small>`:""}${g}</td>`}).join("")+"</tr>"}
+ el.innerHTML=t+"</tbody>";
+ const diffs=S.flatMap(s=>s.envDiffs.map(d=>s.template+": "+d.key+" ("+d.values.map(v=>v.label+" = "+v.value).join("; ")+")"));
+ $("setupsNote").innerHTML="Median over the runs of a setup, with the range below it. A difference between two setups counts only where ▼ or ▲ appears: the two ranges do not overlap (needs at least two runs in each). With one run per setup nothing can be called a real difference; single runs differ by about 12 to 15 % in cost and time."+(diffs.length?"<br><b>The environment differed between runs of one setup:</b> "+esc(diffs.join(" | "))+".":"");
+})();
+
+// --- svg helpers
+const svg=(w,hh,b)=>`<svg viewBox="0 0 ${w} ${hh}" role="img"><defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--surface)"/><rect width="2.2" height="5" fill="var(--k-rebuild)"/></pattern></defs>${b}</svg>`;
+const niceMax=v=>{v=v||1;const p=Math.pow(10,Math.floor(Math.log10(v)));const m=v/p;return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p};
+const none=(id)=>{$(id).innerHTML=`<div class="empty">No run to show.</div>`};
+
+function chTime(){if(!R.length)return none("chTime");const W=560,L=leftM(R),Rm=90,T=8,bh=24,gap=12,H=T+R.length*(bh+gap)+24;const mx=niceMax(maxOf(R.map(r=>val(r,"agentMin").v),1));
+ const x=v=>L+(W-L-Rm)*v/mx;let b="";
+ for(let t=0;t<=mx+1e-9;t+=mx/4)b+=`<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${T}" y2="${H-20}"/><text x="${x(t)}" y="${H-5}" text-anchor="middle">${Math.round(t)}</text>`;
+ R.forEach((r,i)=>{const y=T+i*(bh+gap),a=val(r,"agentMin").v||0,mo=val(r,"modelMin").v,to=val(r,"toolMin").v;
+  b+=lab(r,L-8,y+bh/2+4);
+  const segs=mo!=null&&to!=null?[[mo,"var(--k-model)"],[to,"var(--k-tool)"],[Math.max(0,a-mo-to),"var(--k-other)"]]:[[a,"var(--k-other)"]];
+  let c=0;segs.forEach(([v,cl])=>{if(v<=0)return;b+=`<rect x="${x(c)}" y="${y}" width="${Math.max(0,x(c+v)-x(c)-1)}" height="${bh}" fill="${cl}"/>`;
+   if(x(c+v)-x(c)>26)b+=`<text x="${(x(c)+x(c+v))/2}" y="${y+bh/2+4}" text-anchor="middle" style="fill:#fff;font-weight:600">${Math.round(v)}</text>`;c+=v});
+  b+=`<text class="val" x="${x(a)+6}" y="${y+bh/2+4}">${Math.round(a)}</text>`});
+ $("chTime").innerHTML=svg(W,H,b)}
+
+// cost stacked (token parts priced at the list prices of the report: input 4, output 20, cache read 0.2, cache write 8 per MTok)
+function chCost(){const rs=R.filter(r=>r.tokens&&val(r,"costLogged").v!=null);if(!rs.length)return none("chCost");
+ const W=560,L=leftM(rs),Rm=110,T=8,bh=24,gap=12,H=T+rs.length*(bh+gap)+24;
+ const mx=niceMax(maxOf(rs.map(r=>val(r,"costLogged").v),1));const x=v=>L+(W-L-Rm)*v/mx;let b="";
+ for(let t=0;t<=mx+1e-9;t+=mx/4)b+=`<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${T}" y2="${H-20}"/><text x="${x(t)}" y="${H-5}" text-anchor="middle">$${Math.round(t)}</text>`;
+ rs.forEach((r,i)=>{const y=T+i*(bh+gap),t=r.tokens,logged=val(r,"costLogged").v,excl=val(r,"costExcl").v,rebuild=Math.max(0,logged-excl);
+  let cr=(t.cr||0)*0.2/1e6,cw=(t.cw||0)*8/1e6,out=(t.out||0)*20/1e6,inp=(t.inp||0)*4/1e6;
+  const sum=cr+cw+out+inp,k=sum?logged/sum:1;cr*=k;cw*=k;out*=k;inp*=k;
+  cw=Math.max(0,cw-rebuild);
+  b+=lab(r,L-8,y+bh/2+4);
+  let c=0;[[cr,"var(--k-cr)"],[cw,"var(--k-cw)"],[out+inp,"var(--k-out)"],[rebuild,"url(#hatch)"]].forEach(([v,cl])=>{if(v<=0)return;b+=`<rect x="${x(c)}" y="${y}" width="${Math.max(0,x(c+v)-x(c)-1)}" height="${bh}" fill="${cl}"${cl[0]==="u"?' stroke="var(--k-rebuild)"':""}/>`;
+   if(x(c+v)-x(c)>30)b+=`<text x="${(x(c)+x(c+v))/2}" y="${y+bh/2+4}" text-anchor="middle" style="fill:#fff;font-weight:600">${v.toFixed(1)}</text>`;c+=v});
+  b+=`<text class="val" x="${x(c)+6}" y="${y+bh/2+4}">$${excl.toFixed(2)}${rebuild>0.05?" (+"+rebuild.toFixed(1)+")":""}</text>`});
+ $("chCost").innerHTML=svg(W,H,b)}
+
+// scatter; labels are pushed apart so they never overlap each other or the axis
+function chScatter(){const rs=R.filter(r=>val(r,"costExcl").v!=null&&val(r,"agentMin").v!=null);if(!rs.length)return none("chScatter");const W=560,H=300,L=46,Rm=16,T=14,B=38;
+ const mxX=niceMax(maxOf(rs.map(r=>val(r,"agentMin").v),1)*1.08),mxY=niceMax(maxOf(rs.map(r=>val(r,"costExcl").v),1)*1.08);
+ const x=v=>L+(W-L-Rm)*v/mxX,y=v=>T+(H-T-B)*(1-v/mxY);let b="";
+ for(let t=0;t<=mxY+1e-9;t+=mxY/4)b+=`<line class="grid" x1="${L}" x2="${W-Rm}" y1="${y(t)}" y2="${y(t)}"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end">$${Math.round(t)}</text>`;
+ for(let t=0;t<=mxX+1e-9;t+=mxX/4)b+=`<text x="${x(t)}" y="${H-18}" text-anchor="middle">${Math.round(t)}</text>`;
+ b+=`<text x="${(L+W-Rm)/2}" y="${H-3}" text-anchor="middle">agent minutes</text>`;
+ const placed=[];let dots="",labels="";
+ rs.slice().sort((p,q)=>val(p,"agentMin").v-val(q,"agentMin").v).forEach(r=>{const cx=x(val(r,"agentMin").v),cy=y(val(r,"costExcl").v);const ok=val(r,"gateMet").v!==0;
+  dots+=`<circle cx="${cx}" cy="${cy}" r="6" fill="${ok?col(r)+"":"var(--surface)"}" stroke="${col(r)}" stroke-width="2"><title>${ok?"":"below the quality gate, not comparable: "}${esc(r.label)}: ${fmt("min",val(r,"agentMin").v)} min, ${fmt("usd",val(r,"costExcl").v)}</title></circle>`;
+  const text=sl(r.label,26),w=text.length*6.4,right=cx>(W-L)*0.6+L,lx=right?cx-10:cx+10,x0=right?lx-w:lx,x1=right?lx:lx+w;let ly=cy+4;
+  for(let k=0;k<12&&placed.some(p=>x0<p.x1&&x1>p.x0&&Math.abs(p.y-ly)<14);k++)ly+=14;
+  ly=Math.min(ly,H-B+2);placed.push({x0,x1,y:ly});
+  labels+=`<text x="${lx}" y="${ly}" text-anchor="${right?"end":"start"}"><title>${esc(r.label)}</title>${esc(text)}</text>`});
+ $("chScatter").innerHTML=svg(W,H,b+dots+labels)}
+
+function groupedBars(id,rs,series,max,fmtv,lines){if(!rs.length)return none(id);
+ const W=560,L=leftM(rs),Rm=52,T=18,bh=11,gap=3,gg=16,sh=series.length*(bh+gap),gh=sh+gg,H=T+rs.length*gh+6,x=v=>L+(W-L-Rm)*v/max;let b="";
+ for(let k=0;k<=4;k++){const v=max*k/4;b+=`<line class="grid" x1="${x(v)}" x2="${x(v)}" y1="${T}" y2="${H-6}"/><text x="${x(v)}" y="${T-6}" text-anchor="middle">${Math.round(v)}</text>`}
+ (lines||[]).forEach(l=>b+=`<line x1="${x(l)}" x2="${x(l)}" y1="${T}" y2="${H-6}" stroke="var(--warn)" stroke-dasharray="4 3" stroke-width="1.5"/>`);
+ rs.forEach((r,i)=>{const y0=T+4+i*gh;b+=lab(r,L-8,y0+sh/2+3);
+  series.forEach((s,j)=>{const v=s.get(r),y=y0+j*(bh+gap);
+   if(v==null){b+=`<text x="${L+4}" y="${y+bh-1}" style="font-size:10.5px">–</text>`;return}
+   b+=`<rect x="${L}" y="${y}" width="${Math.max(1,x(v)-L)}" height="${bh}" fill="${s.color}"><title>${esc(r.label)}: ${esc(s.name)} ${fmtv(v)}</title></rect><text class="val" x="${x(v)+4}" y="${y+bh-1}" style="font-size:10.5px">${fmtv(v)}</text>`})});
+ $(id).innerHTML=svg(W,H,b)}
+function chQual(){const g=id=>r=>{const v=val(r,id).v;return v==null?null:v};
+ groupedBars("chQual",R,[{name:"Backend line coverage",color:"var(--q-1)",get:g("covBackend")},{name:"Frontend line coverage",color:"var(--q-2)",get:g("covFrontend")},{name:"Backend mutation (adjusted)",color:"var(--q-3)",get:g("mutAdjBackend")},{name:"Frontend mutation (adjusted)",color:"var(--q-4)",get:g("mutAdjFrontend")}],100,v=>(Math.round(v*10)/10)+"",[90,95])}
+function chWork(){const g=id=>r=>{const v=val(r,id).v;return v==null?null:v};const mx=niceMax(maxOf(R.flatMap(r=>["modelCalls","toolCalls","finalTests","commitCount"].map(i=>val(r,i).v)),1));
+ groupedBars("chWork",R,[{name:"Model calls",color:"var(--q-1)",get:g("modelCalls")},{name:"Tool calls",color:"var(--q-2)",get:g("toolCalls")},{name:"Tests at the end",color:"var(--q-3)",get:g("finalTests")},{name:"Commits",color:"var(--q-4)",get:g("commitCount")}],mx,v=>Math.round(v)+"")}
+function chCtx(){const rs=R.filter(r=>r.phases.some(p=>p.avgContextK!=null));$("lgRuns").innerHTML=rs.map(r=>`<span title="${esc(r.label)}"><i style="background:${col(r)}"></i>${esc(sl(r.label,40))}</span>`).join("");
+ if(!rs.length)return none("chCtx");
+ const W=560,H=250,L=40,Rm=14,T=10,B=28,mx=600;const x=i=>L+(W-L-Rm)*i/7,y=v=>T+(H-T-B)*(1-Math.min(v,mx)/mx);let b="";
+ [0,150,300,450,600].forEach(t=>b+=`<line class="grid" x1="${L}" x2="${W-Rm}" y1="${y(t)}" y2="${y(t)}"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end">${t}</text>`);
+ for(let i=0;i<8;i++)b+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">P${i}</text>`;
+ b+=`<line x1="${L}" x2="${W-Rm}" y1="${y(150)}" y2="${y(150)}" stroke="var(--warn)" stroke-dasharray="4 4"/>`;
+ rs.forEach((r,j)=>{const pts=r.phases.filter(p=>p.avgContextK!=null);b+=`<polyline points="${pts.map(p=>x(p.phase)+","+y(p.avgContextK)).join(" ")}" fill="none" stroke="${col(r)}" stroke-width="2" ${j%2?'stroke-dasharray="5 3"':''}/>`;
+  pts.forEach(p=>b+=`<circle cx="${x(p.phase)}" cy="${y(p.avgContextK)}" r="2.5" fill="${col(r)}"><title>${esc(r.label)} P${p.phase}: ${p.avgContextK}k</title></circle>`)});
+ $("chCtx").innerHTML=svg(W,H,b)}
+
+function phaseTable(){const names=["0 Preflight","1 Requirements","2 Design","3 Test design","4 Build","5 Unit tests","6 Verify","7 Release"];
+ const mx=maxOf(R.flatMap(r=>r.phases.map(p=>p.agentMin||0)),1);const rows=[];
+ names.forEach((n,i)=>{const overhead=[0,1,2,7].includes(i);rows.push(`<tr><td>${n}${overhead?' <span class="tag">overhead</span>':""}</td>${R.map(r=>{const p=r.phases.find(q=>q.phase===i);return p?`<td>${Math.round(p.agentMin)}<span class="bar2" style="width:${Math.round(40*p.agentMin/mx)}px;background:var(--vline)"></span></td>`:"<td class=\"miss\">–</td>"}).join("")}</tr>`)});
+ rows.push(`<tr><td><b>Agent time</b></td>${R.map(r=>`<td><b>${val(r,"agentMin").v==null?"–":Math.round(val(r,"agentMin").v)}</b></td>`).join("")}</tr>`);
+ table("phases","Phase",rows,{attrW:260})}
+
+// commits (single run)
+function commitsView(){const r=R[0],cs=r&&r.commits;if(!D.single||!cs||!cs.length)return;$("secCommits").hidden=false;
+ const W=1040,H=230,L=40,Rm=8,T=14,B=26,mx=Math.max(450,niceMax(Math.min(1200,Math.max(...cs.map(c=>c.lines)))));const y=v=>T+(H-T-B)*(1-Math.min(v,mx)/mx),bw=(W-L-Rm)/cs.length;let b="";
+ [0,mx/4,mx/2,mx*3/4,mx].forEach(t=>b+=`<line class="grid" x1="${L}" x2="${W-Rm}" y1="${y(t)}" y2="${y(t)}"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end">${Math.round(t)}</text>`);
+ b+=`<line x1="${L}" x2="${W-Rm}" y1="${y(400)}" y2="${y(400)}" stroke="var(--warn)" stroke-dasharray="5 4"/>`;
+ cs.forEach((c,i)=>{const x=L+i*bw,cl=c.oversize?"var(--warn)":c.mixed?"var(--k-mixed)":"var(--k-model)";
+  b+=`<rect x="${x+0.5}" y="${y(c.lines)}" width="${Math.max(1,bw-1.5)}" height="${y(0)-y(c.lines)}" fill="${cl}"><title>${esc(c.hash+" "+c.subject)} | ${c.lines} lines, ${c.files} files | $${c.costUsdSincePrev} | ${c.activeMinutesSincePrev} min since previous</title></rect>`});
+ $("chCommits").innerHTML=svg(W,H,b);
+ const flags=c=>[c.oversize?"over guide":"",c.mixed?"mixed":"",c.burst?"burst":"",c.messageOk?"":"message"].filter(Boolean).join(", ")||"–";
+ const w=[44,90,64,220,60,70,120,110,150,300];
+ $("commitTable").style.minWidth=w.reduce((a,b)=>a+b,0)+"px";
+ $("commitTable").innerHTML=`<colgroup>${w.map((x,i)=>i===w.length-1?"<col>":`<col style="width:${x}px">`).join("")}</colgroup><thead><tr>${["#","Commit","Phase","Concerns (changed lines)","Files","Lines","Minutes since previous","Cost since previous","Flags","Subject"].map(h=>`<th class="fh">${h}</th>`).join("")}</tr></thead><tbody>`+cs.map((c,i)=>`<tr><td>${i+1}</td><td><code>${c.hash}</code></td><td>${c.phase??"–"}</td><td>${esc(Object.entries(c.categories).map(([k,v])=>k+" "+v).join(", ")||"–")}</td><td>${c.files}</td><td>${c.lines}</td><td>${c.activeMinutesSincePrev}</td><td>$${c.costUsdSincePrev.toFixed(2)}</td><td>${flags(c)}</td><td>${esc(c.subject)}</td></tr>`).join("")+"</tbody>"}
+
+// --- environment
+const envv=(r,f)=>{try{const v=f(r.environment||{});return v==null||v===""||(Array.isArray(v)&&!v.length)?null:(Array.isArray(v)?v.join(", "):String(v))}catch(e){return null}};
+const lc=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+// names that identify an operator: the series of the runs and every declared operator
+const known=[...new Set([...ALL.map(r=>lc(r.series)),...ALL.map(r=>lc(r.environment&&r.environment.operator))].filter(n=>n.length>2))];
+const account=r=>{const e=r.environment||{};if(e.host&&e.host.account)return e.host.account;const d=(e.workingDirs||[])[0]||"";const m=d.match(/^\/home\/([^/]+)/)||d.match(/^\/Users\/([^/]+)/)||d.match(/^[A-Za-z]:[\\/]+Users[\\/]+([^\\/]+)/i);return m?m[1]:null};
+const sessionOs=r=>{const e=r.environment||{};const d=(e.workingDirs||[])[0];if(e.os&&e.os.platform)return e.os.platform;return d?(/^[A-Za-z]:[\\/]/.test(d)?"win32":/^\/Users\//.test(d)?"darwin":"linux"):null};
+function operatorMismatch(r){const e=r.environment||{},acc=lc(account(r)),op=lc(e.operator);if(!acc||!op)return null;if(acc.includes(op))return null;
+ const other=known.find(n=>n!==op&&acc.includes(n));return other?`declared operator "${e.operator}", but the session ran under the account "${account(r)}", which matches "${other}"`:null}
+function permMismatch(r){const e=r.environment||{};if(!e.permissionMode||!(e.permissionModes||[]).length)return null;return e.permissionModes.includes(e.permissionMode)&&e.permissionModes.length===1?null:`declared "${e.permissionMode}", the session used: ${e.permissionModes.join(", ")}`}
+function hostMismatch(r){const e=r.environment||{};const a=e.os&&e.os.platform,b=e.postRunHost&&e.postRunHost.platform;return a&&b&&a!==b?`the run was on ${a}, the report was measured on ${b}`:null}
+function envTables(){
+ const dec=[["Operator",r=>{const m=operatorMismatch(r);return {t:envv(r,e=>e.operator),cls:m?"warnc":"",title:m||""}}],["Machine",r=>envv(r,e=>e.machine)],["Plan",r=>envv(r,e=>e.plan)],["Permission mode",r=>{const m=permMismatch(r);return {t:envv(r,e=>e.permissionMode),cls:m?"warnc":"",title:m||""}}],["Template version",r=>r.template]];
+ table("envDecl","Declared",dec.map(([n,f])=>textRow(n,f)),{attrW:260});
+ const ses=[["Harness",r=>envv(r,e=>e.harness&&(e.harness.name+" "+(e.harness.versions||[]).join(", ")))],["Entry point",r=>envv(r,e=>e.harness&&e.harness.entrypoints)],["Models",r=>envv(r,e=>e.models)],["Effort",r=>envv(r,e=>e.effort)],["Permission modes seen in the session",r=>{const m=permMismatch(r);return {t:envv(r,e=>e.permissionModes),cls:m?"warnc":"",title:m||""}}],["Git branch seen in the session",r=>envv(r,e=>e.gitBranches)]];
+ table("envSession","Session",ses.map(([n,f])=>textRow(n,f)),{attrW:260});
+ const mac=[["Operating system at the start",r=>envv(r,e=>e.os&&(e.os.platform+" "+e.os.release+" "+e.os.arch))],["Shell",r=>envv(r,e=>e.shell)],["Node",r=>envv(r,e=>e.tools&&e.tools.node)],["Docker",r=>envv(r,e=>e.tools&&e.tools.docker)],["Java",r=>envv(r,e=>e.tools&&e.tools.java)],["Python",r=>envv(r,e=>e.tools&&e.tools.python)],["Git",r=>envv(r,e=>e.tools&&e.tools.git)],
+  ["Report measured on",r=>{const m=hostMismatch(r);return {t:envv(r,e=>e.postRunHost&&(e.postRunHost.platform+" "+e.postRunHost.release+", "+e.postRunHost.cpus+" threads, "+e.postRunHost.memoryGb+" GB")),cls:m?"warnc":"",title:m||""}}]];
+ table("envMachine","Machine and tools",mac.map(([n,f])=>textRow(n,f)),{attrW:260})}
+
+// --- trust checks
+function trustTable(){const g=(r,id)=>val(r,id).v;
+ const rows=[
+  ["Sub-agents",r=>r.subagents?(r.subagents.used?r.subagents.used+" call(s), "+r.subagents.transcripts+" transcript(s), $"+r.subagents.costUsd.toFixed(2):"none used"):"–"],
+  ["Phase timestamps from the clock tool",r=>r.phaseChecks&&(r.phaseChecks.viaHelper+r.phaseChecks.manual)?r.phaseChecks.viaHelper+" of "+(r.phaseChecks.viaHelper+r.phaseChecks.manual)+" boundaries":"–"],
+  ["Phase timestamp issues",r=>r.phaseChecks?(r.phaseChecks.issues.length?r.phaseChecks.issues.join("; "):"none"):"–"],
+  ["Idle time missing from the log",r=>g(r,"unrecordedIdleMin")==null?"–":g(r,"unrecordedIdleMin")+" min"]];
+ table("checks","Check",rows.map(([n,f])=>textRow(n,f)),{attrW:260})}
+
+// --- row-per-run tables
+const rowTable=(id,heads,widths,rows)=>{const el=$(id);el.style.minWidth=widths.reduce((a,b)=>a+b,0)+"px";
+ el.innerHTML=`<colgroup>${widths.map((w,i)=>i===widths.length-1?"<col>":`<col style="width:${w}px">`).join("")}</colgroup><thead><tr>${heads.map(h=>`<th class="fh">${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`};
+function waitsTable(){let rows=[];R.forEach(r=>{(r.longWaits||[]).forEach(x=>rows.push([r.label,Math.round(x.min)+" min",x.source,x.reason||""]))});
+ const rb=[];R.forEach(r=>(r.rebuilds||[]).filter(b=>b.causedByWait).forEach(b=>rb.push([r.label,"phase "+b.phase,Math.round(b.tokens/1000)+"k tokens","$"+b.extraCostUsd.toFixed(2)])));
+ let h=(rows.length?rows.map(r=>"<tr>"+r.map(c=>`<td>${esc(c)}</td>`).join("")+"</tr>").join(""):`<tr><td colspan="4">none</td></tr>`);
+ if(rb.length)h+=`<tr class="grp"><td colspan="4">Cache rebuilds measured in transcripts (removed from the cost shown)</td></tr>`+rb.map(r=>"<tr>"+r.map(c=>`<td>${esc(c)}</td>`).join("")+"</tr>").join("");
+ rowTable("waits",["Run","Wait over 1 hour","Found in","What it waited for"],[260,140,200,420],h)}
+function sourcesTable(){rowTable("sources",["Run","Time from","Usage from","Notes"],[240,220,220,520],R.map(r=>`<tr><td>${esc(r.label)}</td><td>${esc(r.sources.time)}</td><td>${esc(r.sources.usage)}</td><td>${[...r.flags.map(f=>`<div class="flag">${esc(f)}</div>`),...r.notes.map(n=>`<div>${esc(n)}</div>`)].join("")||"–"}</td></tr>`).join(""));
+ $("excluded").innerHTML=D.excluded.map(e=>`<li>Not included: ${esc(e)}</li>`).join("")}
+
+function render(){R=ALL.filter(r=>!off.has(r.i));chips();kpis();gateTable();groupTables();chTime();chCost();chQual();chWork();chScatter();chCtx();phaseTable();commitsView();envTables();trustTable();waitsTable();sourcesTable();
+ $("bGate").disabled=!ALL.some(r=>val(r,"gateMet").v===1)}
+render();
+</script>
+</body></html>

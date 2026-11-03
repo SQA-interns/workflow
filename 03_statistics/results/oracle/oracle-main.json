@@ -1,0 +1,134 @@
+{
+  "phase": "main",
+  "feature": "none",
+  "features": [],
+  "featurePrefixes": {},
+  "tag": "idrjmr",
+  "base_url": "http://127.0.0.1:8081",
+  "results": {
+    "R01": {
+      "result": "pass",
+      "detail": "GET /api/me 200, email matches True, verified True, same id twice True"
+    },
+    "R02": {
+      "result": "pass",
+      "detail": "statuses {'none': 401, 'garbage': 401, 'wrong audience': 401, 'expired': 401} (expected 401 each)"
+    },
+    "R03": {
+      "result": "pass",
+      "detail": "create 201 role OWNER, listed OWNER, blank 400, 101 chars 400, Workspaces listed 1"
+    },
+    "R04": {
+      "result": "fail",
+      "detail": "add existing User 201 status MEMBER, role in their list EDITOR, add again 409 (expected 409)"
+    },
+    "R05": {
+      "result": "fail",
+      "detail": "invite 201 status INVITED, role after sign-in VIEWER, invitation still listed False"
+    },
+    "R06": {
+      "result": "pass",
+      "detail": "unverified: Workspace 404 (expected 404), after verification 200 (expected 200)"
+    },
+    "R07": {
+      "result": "pass",
+      "detail": "last Owner leaves 409, demotes self 409 (expected 409 each); second Owner demoted 200, then renames 403 (expected 403)"
+    },
+    "R08": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R09": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R10": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R11": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R12": {
+      "result": "fail",
+      "detail": "create 201, version None, fields differing ['firstName', 'lastName', 'email', 'phone', 'company', 'jobTitle', 'street', 'postalCode', 'city', 'country', 'note'] (country expected SI)"
+    },
+    "R13": {
+      "result": "fail",
+      "detail": "rejections not as expected: none; Contacts stored None (expected 0)"
+    },
+    "R14": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R15": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R16": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R17": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R18": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R19": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R20": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R21": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R22": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R23": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R24": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R25": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R26": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R27": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R28": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R29": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R30": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    },
+    "R31": {
+      "result": "harness",
+      "detail": "could not create a Contact (201, errors [])"
+    }
+  }
+}
